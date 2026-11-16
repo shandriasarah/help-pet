@@ -67,7 +67,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
 
     var nomePet by remember { mutableStateOf("") }
     var especie by remember { mutableStateOf("") }
-    // Estado extra para guardar o texto quando a pessoa seleciona "Outro"
+
     var especieOutroTexto by remember { mutableStateOf("") }
     var genero by remember { mutableStateOf("") }
     var raca by remember { mutableStateOf("") }
@@ -110,7 +110,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
             }.clickable { photoPickerLauncher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
-            // SE TIVER FOTO, MOSTRA A IMAGEM. SE NÃO, MOSTRA O TEXTO/ÍCONE
+
             if (fotoUri != null) {
                 AsyncImage(
                     model = fotoUri,
@@ -137,7 +137,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
             QuickChip("Outro", especie == "Outro", accentRed) { especie = "Outro" }
         }
 
-        // CAIXA MÁGICA: Só aparece se a espécie escolhida for "Outro"
+
         if (especie == "Outro") {
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -172,7 +172,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = {
-                // Validação de espécie: se for "Outro", o utilizador tem de ter escrito alguma coisa
+
                 val especieFinal = if (especie == "Outro") especieOutroTexto.trim() else especie
 
                 if (!FormValidator.validarNomePet(nomePet) || !FormValidator.validarTelefone(telefone) || especieFinal.isEmpty() || genero.isEmpty() || caracteristicas.isEmpty() || localVisto.isEmpty()) {
@@ -193,7 +193,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
                     val petPerdido = Animal(
                         id = "",
                         nome = "$nomePet (Perdido)",
-                        especie = especieFinal, // Salva o nome real da espécie escrita
+                        especie = especieFinal,
                         raca = raca.ifEmpty { "Sem raça definida" },
                         genero = genero,
                         idade = "Desconhecida",

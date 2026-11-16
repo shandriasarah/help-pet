@@ -62,7 +62,7 @@ fun MapaScreen() {
     var animaisNoBanco by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
-    // Busca em tempo real os animais cadastrados no Firebase
+
     LaunchedEffect(Unit) {
         db.collection("animais").addSnapshotListener { snapshot, error ->
             if (error == null && snapshot != null) {
@@ -143,7 +143,7 @@ fun MapaScreen() {
                         setMultiTouchControls(true)
                         controller.setZoom(14.2)
 
-                        // Centro do Recife
+
                         controller.setCenter(GeoPoint(-8.0578, -34.8829))
                     }
                 },
@@ -151,14 +151,14 @@ fun MapaScreen() {
                     mapView.overlays.clear()
 
 
-                    // Filtra para manter APENAS os pets que contêm "Perdido" ou "Desaparecido"
+
                     val listaParaExibir = if (animaisNoBanco.isNotEmpty()) {
                         animaisNoBanco.filter { animal ->
                             animal.nome.contains("Perdido", ignoreCase = true) ||
                                     animal.nome.contains("Desaparecido", ignoreCase = true)
                         }
                     } else {
-                        // Se o banco estiver vazio, mostra apenas o exemplo de perdido
+
                         listOf(
                             Animal(
                                 id = "demo1",
@@ -175,16 +175,16 @@ fun MapaScreen() {
                         val isPerdido = animal.nome.contains("Perdido", ignoreCase = true) ||
                                 animal.nome.contains("Desaparecido", ignoreCase = true)
 
-                        // 1. DESENHA O CÍRCULO DA REGIÃO PRÓXIMA (Raio de 450 metros)
+
                         val circuloRegiao = Polygon(mapView).apply {
                             points = Polygon.pointsAsCircle(ponto, 450.0)
                             infoWindow = null
                             if (isPerdido) {
-                                // Vermelho suave para área de busca de pet perdido
+
                                 fillPaint.color = AndroidColor.argb(45, 197, 57, 41)
                                 outlinePaint.color = AndroidColor.rgb(197, 57, 41)
                             } else {
-                                // Verde suave para pet encontrado / adoção
+
                                 fillPaint.color = AndroidColor.argb(45, 46, 125, 50)
                                 outlinePaint.color = AndroidColor.rgb(46, 125, 50)
                             }
@@ -192,7 +192,7 @@ fun MapaScreen() {
                         }
                         mapView.overlays.add(circuloRegiao)
 
-                        // 2. ADICIONA O PINO NO CENTRO DO CÍRCULO
+
                         val marcador = Marker(mapView).apply {
                             position = ponto
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -230,7 +230,7 @@ fun MapaScreen() {
     }
 }
 
-// Identifica o bairro na descrição e devolve a coordenada correspondente em Recife
+
 private fun obterCoordenadasRecife(descricao: String, seed: Int): GeoPoint {
     val texto = descricao.lowercase()
     val base = when {

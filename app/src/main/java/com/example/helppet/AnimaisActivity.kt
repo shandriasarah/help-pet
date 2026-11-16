@@ -271,7 +271,7 @@ fun AnimalItemListCardReal(animal: Animal) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // MOSTRA A FOTO REAL OU UM FUNDO COM ÍCONE CASO NÃO TENHA FOTO
+
             if (animal.fotoUrl.isNotEmpty()) {
                 AsyncImage(
                     model = animal.fotoUrl,

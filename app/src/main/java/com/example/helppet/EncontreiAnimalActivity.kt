@@ -243,7 +243,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                 QuickChip("Outro", especie == "Outro") { especie = "Outro" }
             }
 
-            // NOVO: Caixinha extra que só aparece se escolher "Outro"
+
             if (especie == "Outro") {
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
@@ -303,7 +303,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = {
-                // Valida a espécie correta (pega o texto se for "Outro")
+
                 val especieFinal = if (modoIdentificacao == "foto" && especie == "Outro") especieOutroTexto.trim() else especie
 
                 if (modoIdentificacao == "lista") {
@@ -351,6 +351,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                                 NotificacaoHelper.enviarAlerta(
                                     titulo = "Notícia sobre $nomeLimpo!",
                                     mensagem = "O pet $nomeLimpo foi marcado como '$statusResgate' perto de $localizacao! Contacto: $telefone"
+
                                 )
                                 isLoading = false
                                 Toast.makeText(context, "Status atualizado! O pet foi retirado do mapa de buscas.", Toast.LENGTH_LONG).show()
@@ -361,12 +362,12 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                                 Toast.makeText(context, "Erro ao atualizar status.", Toast.LENGTH_LONG).show()
                             }
                     } else {
-                        // Evita o nome "Desconhecido": usa a espécie e a cor principal no título!
+
                         val tituloPet = "$especieFinal $corPrincipal ($statusResgate)"
                         val petEncontrado = Animal(
                             id = "",
                             nome = tituloPet,
-                            especie = especieFinal, // Usa a espécie correta
+                            especie = especieFinal,
                             raca = "Porte $porte",
                             genero = "",
                             idade = corPrincipal,
@@ -504,7 +505,7 @@ private fun PetPerdidoItemCard(
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                // CORRIGIDO: Bug do traço e quebra de linha que estava a dar erro!
+
                 Text(
                     text = "${pet.especie} • ${pet.raca} ${if (pet.genero.isNotEmpty()) "• ${pet.genero}" else ""}",
                     fontSize = 13.sp,
@@ -543,7 +544,7 @@ private fun PhotoUploadBox(fotoUri: Uri?, primaryGreen: Color, onClick: () -> Un
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        // NOVO: Se tiver foto, mostra ela preenchendo a caixa. Se não, mostra o texto.
+
         if (fotoUri != null) {
             AsyncImage(
                 model = fotoUri,

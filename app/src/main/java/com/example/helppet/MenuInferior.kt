@@ -31,7 +31,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 1. INÍCIO
+
             val corInicio = if (telaAtual == "Inicio") primaryGreen else textSecondary
             BottomNavItem(
                 iconId = R.drawable.ic_nav_home, label = "Início", tint = corInicio, isBold = telaAtual == "Inicio",
@@ -44,7 +44,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                 }
             )
 
-            // 2. ANIMAIS
+
             val corAnimais = if (telaAtual == "Animais") primaryGreen else textSecondary
             BottomNavItem(
                 iconId = R.drawable.ic_nav_pets, label = "Animais", tint = corAnimais, isBold = telaAtual == "Animais",
@@ -57,7 +57,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                 }
             )
 
-            // 3. BOTÃO CENTRAL (+)
+
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier.size(46.dp).background(primaryGreen, CircleShape).clickable { onAddClick() },
@@ -67,7 +67,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                 }
             }
 
-            // 4. MAPA
+
             val corMapa = if (telaAtual == "Mapa") primaryGreen else textSecondary
             BottomNavItem(
                 iconId = R.drawable.ic_nav_map, label = "Mapa", tint = corMapa, isBold = telaAtual == "Mapa",
@@ -80,7 +80,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                 }
             )
 
-            // 5. PERFIL
+
             val corPerfil = if (telaAtual == "Perfil") primaryGreen else textSecondary
             BottomNavItem(
                 iconId = R.drawable.ic_nav_profile, label = "Perfil", tint = corPerfil, isBold = telaAtual == "Perfil",

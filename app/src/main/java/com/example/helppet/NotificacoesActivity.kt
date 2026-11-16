@@ -21,6 +21,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
@@ -31,15 +32,18 @@ data class Notificacao(
     val id: String = "",
     val titulo: String = "",
     val mensagem: String = "",
+    val destinatarioId: String = "TODOS",
     val data: Long = System.currentTimeMillis()
 )
 
 object NotificacaoHelper {
-    fun enviarAlerta(titulo: String, mensagem: String) {
+
+    fun enviarAlerta(titulo: String, mensagem: String, destinatarioId: String = "TODOS") {
         val db = FirebaseFirestore.getInstance()
         val novaNotificacao = hashMapOf(
             "titulo" to titulo,
             "mensagem" to mensagem,
+            "destinatarioId" to destinatarioId,
             "data" to System.currentTimeMillis()
         )
         db.collection("notificacoes").add(novaNotificacao)
@@ -67,6 +71,8 @@ fun NotificacoesScreen(onBackClick: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
 
     val db = remember { FirebaseFirestore.getInstance() }
+    val auth = remember { FirebaseAuth.getInstance() }
+    val meuUserId = auth.currentUser?.uid ?: ""
 
     LaunchedEffect(Unit) {
         db.collection("notificacoes")
@@ -76,8 +82,15 @@ fun NotificacoesScreen(onBackClick: () -> Unit) {
                     isLoading = false
                     return@addSnapshotListener
                 }
+
+
                 listaNotificacoes = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Notificacao::class.java)?.copy(id = doc.id)
+                    val notif = doc.toObject(Notificacao::class.java)?.copy(id = doc.id)
+                    if (notif != null && (notif.destinatarioId == "TODOS" || notif.destinatarioId == meuUserId)) {
+                        notif
+                    } else {
+                        null
+                    }
                 }
                 isLoading = false
             }
@@ -139,6 +152,10 @@ fun NotificacaoCard(notificacao: Notificacao, primaryGreen: Color) {
     val formatador = remember { SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()) }
     val dataFormatada = formatador.format(Date(notificacao.data))
 
+
+    val corFundoIcone = if (notificacao.destinatarioId == "TODOS") Color(0xFFE6F4EA) else Color(0xFFFEF7E0)
+    val corIcone = if (notificacao.destinatarioId == "TODOS") primaryGreen else Color(0xFFB06000)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -152,10 +169,10 @@ fun NotificacaoCard(notificacao: Notificacao, primaryGreen: Color) {
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(Color(0xFFE6F4EA), CircleShape),
+                    .background(corFundoIcone, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = primaryGreen)
+                Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = corIcone)
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

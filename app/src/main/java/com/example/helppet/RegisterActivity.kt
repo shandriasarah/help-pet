@@ -52,7 +52,7 @@ class RegisterActivity : ComponentActivity() {
 fun RegisterScreen(onBackToLogin: () -> Unit) {
     val context = LocalContext.current
 
-    // INSTÂNCIAS DO FIREBASE
+
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
 
@@ -67,7 +67,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
     var passwordError by remember { mutableStateOf(false) }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    // ESTADO DE CARREGAMENTO
+
     var isLoading by remember { mutableStateOf(false) }
 
     val backgroundOffWhite = colorResource(id = R.color.background_offwhite)
@@ -214,7 +214,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
                     isLoading = true
 
-                    // LÓGICA DO FIREBASE AQUI
+
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {

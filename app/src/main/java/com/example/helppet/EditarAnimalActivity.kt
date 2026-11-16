@@ -62,7 +62,7 @@ fun EditarAnimalScreen(
     val context = LocalContext.current
     val db = remember { FirebaseFirestore.getInstance() }
 
-    // 1. Descobre e salva a etiqueta original de forma invisível
+
     val tagOriginal = when {
         nomeAtual.contains("(Para Adoção)", true) -> "(Para Adoção)"
         nomeAtual.contains("(Perdido)", true) -> "(Perdido)"
@@ -74,14 +74,14 @@ fun EditarAnimalScreen(
         else -> ""
     }
 
-    // 2. Limpa o nome para o utilizador editar de forma simples
+
     val nomeLimpoAtual = if (tagOriginal.isNotEmpty()) {
         nomeAtual.replace(" $tagOriginal", "", true).trim()
     } else {
         nomeAtual
     }
 
-    // Se for um pet "Desconhecido", deixa a caixa vazia para a pessoa por o nome
+
     val nomeParaExibir = if (nomeLimpoAtual.equals("Desconhecido", true)) "" else nomeLimpoAtual
 
     var nome by remember { mutableStateOf(nomeParaExibir) }
@@ -131,7 +131,7 @@ fun EditarAnimalScreen(
                 }
                 isLoading = true
 
-                // 3. Voltar a colar a tag no nome antes de gravar, para o banco de dados não bugar!
+
                 val nomeParaSalvar = if (tagOriginal.isNotEmpty()) "$nomePreenchido $tagOriginal" else nomePreenchido
 
                 val updates = mapOf(

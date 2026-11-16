@@ -124,7 +124,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
             QuickChip("Outro", especie == "Outro") { especie = "Outro" }
         }
 
-        // NOVO: Caixinha extra que só aparece se escolher "Outro"
+
         if (especie == "Outro") {
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -170,7 +170,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = {
-                // Valida a espécie correta (pega o texto se for "Outro")
+
                 val especieFinal = if (especie == "Outro") especieOutroTexto.trim() else especie
 
                 if (nomePet.isEmpty() || especieFinal.isEmpty() || genero.isEmpty() || idade.isEmpty() || vacinadoCastrado.isEmpty() || telefone.length < 10) {

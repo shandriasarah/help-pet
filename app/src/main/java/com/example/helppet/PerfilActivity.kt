@@ -86,7 +86,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
     var showAlertaDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Estado para os anúncios do usuário
+
     var meusAnimais by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var isLoadingAnimais by remember { mutableStateOf(true) }
 
@@ -99,7 +99,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                     savedAlertaRaio = doc.getString("alertaRaio") ?: "50 km"
                 }
 
-            // Busca os animais cadastrados por este usuário
+
             db.collection("animais")
                 .whereEqualTo("donoId", userId)
                 .addSnapshotListener { snapshot, error ->
@@ -124,7 +124,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
             .background(backgroundOffWhite)
             .verticalScroll(rememberScrollState())
     ) {
-        // --- CABEÇALHO ---
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 24.dp)
@@ -139,7 +139,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
             Text("Perfil", color = textDark, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
 
-        // --- INFORMAÇÕES DA CONTA ---
+
         Text(
             text = "INFORMAÇÕES DA CONTA",
             color = textHint,
@@ -160,7 +160,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- MEUS ANÚNCIOS ---
+
         Text(
             text = "MEUS ANÚNCIOS",
             color = textHint,
@@ -200,7 +200,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                             context.startActivity(intent)
                         },
                         onDelete = {
-                            // Deleta o documento do Firestore
+
                             db.collection("animais").document(animal.id)
                                 .delete()
                                 .addOnSuccessListener {
@@ -217,7 +217,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- ALERTAS ---
+
         Surface(color = Color.White, modifier = Modifier.clickable { showAlertaDialog = true }) {
             Row(
                 modifier = Modifier
@@ -234,7 +234,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- LEGAL ---
+
         Text(
             text = "LEGAL",
             color = textHint,
@@ -269,7 +269,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- BOTÕES DE SAÍDA ---
+
         Column(modifier = Modifier.padding(horizontal = 24.dp)) {
             OutlinedButton(
                 onClick = onLogout,
@@ -299,7 +299,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
         Spacer(modifier = Modifier.height(48.dp))
     }
 
-    // --- BOTTOM SHEET DO ALERTA ---
+
     if (showAlertaDialog) {
         ModalBottomSheet(
             onDismissRequest = { showAlertaDialog = false },
@@ -351,12 +351,12 @@ fun InfoRow(label: String, value: String) {
     }
 }
 
-// --- NOVO COMPONENTE: CARD PARA MEUS ANÚNCIOS ---
+
 @Composable
 fun MeuAnimalCard(animal: Animal, primaryGreen: Color, onEdit: () -> Unit, onDelete: () -> Unit) {
     var showDialog by remember { mutableStateOf(false) }
 
-    // Limpa a tag do nome para mostrar bonitinho
+
     val nomeLimpoTemp = animal.nome
         .replace(" (Para Adoção)", "", ignoreCase = true)
         .replace(" (Perdido)", "", ignoreCase = true)
@@ -392,7 +392,7 @@ fun MeuAnimalCard(animal: Animal, primaryGreen: Color, onEdit: () -> Unit, onDel
         else -> primaryGreen
     }
 
-    // Modal de confirmação
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
@@ -430,7 +430,7 @@ fun MeuAnimalCard(animal: Animal, primaryGreen: Color, onEdit: () -> Unit, onDel
                     }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                // A tua formatação restaurada!
+
                 Text(
                     text = "${animal.especie}\n${animal.raca}",
                     fontSize = 13.sp,

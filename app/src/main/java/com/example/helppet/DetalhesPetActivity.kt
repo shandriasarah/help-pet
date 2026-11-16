@@ -32,7 +32,7 @@ class DetalhesPetActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Receber os dados enviados da página anterior
+
         val nome = intent.getStringExtra("nome") ?: "Desconhecido"
         val especie = intent.getStringExtra("especie") ?: ""
         val raca = intent.getStringExtra("raca") ?: ""
@@ -141,7 +141,7 @@ fun DetalhesPetScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // BOTÃO VOLTAR (À esquerda)
+
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
@@ -158,7 +158,7 @@ fun DetalhesPetScreen(
                     }
                 }
 
-                // NOVO: BOTÃO PARTILHAR (À direita)
+
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
@@ -240,7 +240,7 @@ fun DetalhesPetScreen(
     }
 }
 
-// --- FUNÇÃO PARA ABRIR O WHATSAPP ---
+
 fun abrirWhatsApp(context: Context, telefone: String, nomePet: String) {
     try {
         val numeroLimpo = telefone.replace("\\D".toRegex(), "")
@@ -253,7 +253,6 @@ fun abrirWhatsApp(context: Context, telefone: String, nomePet: String) {
     }
 }
 
-// --- NOVO: FUNÇÃO PARA PARTILHAR O PET ---
 fun partilharPet(context: Context, nome: String, especie: String, local: String, status: String) {
     val textoPartilha = """
         Olha este pet no HelpPet! 🐾

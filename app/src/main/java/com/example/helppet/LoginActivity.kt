@@ -1,5 +1,6 @@
 package com.example.helppet
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -40,6 +41,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.OAuthProvider
 
 class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +76,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    // ESTADO DE CARREGAMENTO PARA O BOTÃO
     var isLoading by remember { mutableStateOf(false) }
 
     val backgroundOffWhite = colorResource(id = R.color.background_offwhite)
@@ -84,7 +85,7 @@ fun LoginScreen(
 
     val googleSignInOptions = remember {
         GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestIdToken("633426246437-nemiqs5ob2gn4n7402q7c6oe1mtr5ems.apps.googleusercontent.com")
             .requestEmail()
             .build()
     }
@@ -113,6 +114,31 @@ fun LoginScreen(
             }
         } catch (e: ApiException) {
             Toast.makeText(context, "Login Google cancelado ou falhou.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+    fun signInWithApple() {
+        val provider = OAuthProvider.newBuilder("apple.com")
+        provider.scopes = listOf("email", "name")
+
+        val pendingResultTask = auth.pendingAuthResult
+        if (pendingResultTask != null) {
+            pendingResultTask.addOnSuccessListener {
+                Toast.makeText(context, "Bem-vindo via Apple!", Toast.LENGTH_SHORT).show()
+                onLoginSuccess()
+            }.addOnFailureListener {
+                Toast.makeText(context, "Erro no login com Apple", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            auth.startActivityForSignInWithProvider(context as Activity, provider.build())
+                .addOnSuccessListener {
+                    Toast.makeText(context, "Bem-vindo via Apple!", Toast.LENGTH_SHORT).show()
+                    onLoginSuccess()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(context, "Erro ao autenticar com a Apple: ${e.message}", Toast.LENGTH_LONG).show()
+                }
         }
     }
 
@@ -203,7 +229,6 @@ fun LoginScreen(
 
                     isLoading = true
 
-                    // LOGIN COM FIREBASE AQUI
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             isLoading = false
@@ -261,13 +286,14 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                OutlinedButton(
-                    onClick = { Toast.makeText(context, "Apple Login em breve!", Toast.LENGTH_SHORT).show() },
+                Button(
+                    onClick = { signInWithApple() },
                     modifier = Modifier.weight(1f).height(60.dp),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, lightGrayBorder)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
                 ) {
-                    Text("A", color = Color.Black, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+
+                    Text("", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                 }
             }
 

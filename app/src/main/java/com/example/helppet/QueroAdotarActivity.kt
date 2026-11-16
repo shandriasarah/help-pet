@@ -53,7 +53,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
     val db = remember { FirebaseFirestore.getInstance() }
 
     var especieDesejada by remember { mutableStateOf("") }
-    // NOVO ESTADO: Guarda o texto quando a pessoa escolhe "Qualquer"
+
     var especieQualquerTexto by remember { mutableStateOf("") }
 
     var porteIdeal by remember { mutableStateOf("") }
@@ -63,7 +63,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
 
     var isLoading by remember { mutableStateOf(false) }
 
-    // Estados para o "Match" (Lista de animais sugeridos)
+
     var isPedidoRegistado by remember { mutableStateOf(false) }
     var petsSugeridos by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var isLoadingPets by remember { mutableStateOf(false) }
@@ -98,7 +98,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // SE O PEDIDO JÁ FOI ENVIADO, MOSTRA A TELA DE "MATCH"
+
         if (isPedidoRegistado) {
             Box(
                 modifier = Modifier
@@ -177,7 +177,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
             }
 
         } else {
-            // TELA DE FORMULÁRIO (Ainda não enviado)
+
             Text("Perfil de Adotante", color = primaryGreen, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(
                 "Regista o teu interesse. Vamos ajudar-te a encontrar o teu novo melhor amigo!",
@@ -193,7 +193,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                 QuickChip("Qualquer", especieDesejada == "Qualquer") { especieDesejada = "Qualquer" }
             }
 
-            // NOVO: Caixinha extra se escolher "Qualquer"
+
             if (especieDesejada == "Qualquer") {
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
@@ -249,7 +249,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
 
             Button(
                 onClick = {
-                    // Valida a espécie correta
+
                     val especieFinal = if (especieDesejada == "Qualquer") {
                         if (especieQualquerTexto.isNotBlank()) especieQualquerTexto.trim() else "Qualquer"
                     } else {
@@ -274,7 +274,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                     db.collection("pedidos_adocao")
                         .add(pedidoAdocao)
                         .addOnSuccessListener {
-                            // Sucesso! Agora procura os pets compatíveis
+
                             isPedidoRegistado = true
                             isLoading = false
                             isLoadingPets = true
@@ -285,9 +285,9 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                                     val especiePet = doc.getString("especie") ?: ""
                                     val racaOuPorte = doc.getString("raca") ?: ""
 
-                                    // Filtra para mostrar só os disponíveis para adoção
+
                                     if (nome.contains("Para Adoção", ignoreCase = true)) {
-                                        // Regra de Match: Mesma Espécie (ou 'Qualquer' escolhido originalmente) E mesmo Porte na raça
+
                                         val matchEspecie = especieDesejada == "Qualquer" || especiePet.contains(especieDesejada, ignoreCase = true)
                                         val matchPorte = racaOuPorte.contains(porteIdeal, ignoreCase = true)
 
@@ -334,7 +334,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
     }
 }
 
-// --- CARD PARA OS PETS SUGERIDOS NO MATCH ---
+
 @Composable
 private fun AnimalAdocaoCard(pet: Animal, primaryGreen: Color, onClick: () -> Unit) {
     val nomeLimpo = pet.nome.replace("(Para Adoção)", "", ignoreCase = true).trim()
@@ -372,7 +372,7 @@ private fun AnimalAdocaoCard(pet: Animal, primaryGreen: Color, onClick: () -> Un
     }
 }
 
-// --- COMPONENTES REUTILIZÁVEIS ---
+
 
 @Composable
 private fun QuickChip(text: String, isSelected: Boolean, onClick: () -> Unit) {

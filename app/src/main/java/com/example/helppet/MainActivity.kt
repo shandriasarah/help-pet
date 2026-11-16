@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Pega o Token do FCM assim que a app abre
+
         com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 android.util.Log.d("FCM_TOKEN", "TUA_CHAVE: ${task.result}")
@@ -101,7 +101,7 @@ fun MainScreen() {
         containerColor = backgroundOffWhite
     ) { paddingValues ->
 
-        // Box externa para segurar toda a tela MAIS o pop-up
+
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -147,7 +147,7 @@ fun MainScreen() {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Pop-up com as 4 opções completas!
+
             if (showAddMenu) {
                 Dialog(onDismissRequest = { showAddMenu = false }) {
                     Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 8.dp) {
@@ -209,7 +209,7 @@ fun AnimalCardPremium(animal: Animal, primaryGreen: Color) {
     val textSecondary = colorResource(id = R.color.text_secondary)
     val context = LocalContext.current
 
-    // Limpeza Mágica para não mostrar "Desconhecido" dos testes antigos
+
     val nomeLimpoTemp = animal.nome
         .replace(" (Para Adoção)", "", ignoreCase = true)
         .replace(" (Perdido)", "", ignoreCase = true)
@@ -290,7 +290,7 @@ fun AnimalCardPremium(animal: Animal, primaryGreen: Color) {
                         Text(text = textoTag, color = corTagText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
-                    // A pessoa precisa abrir os Detalhes para partilhar, por isso removi o ícone daqui para forçar a leitura!
+
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
