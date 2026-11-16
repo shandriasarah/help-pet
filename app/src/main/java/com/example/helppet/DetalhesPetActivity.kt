@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,7 +32,6 @@ import coil.compose.AsyncImage
 class DetalhesPetActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         val nome = intent.getStringExtra("nome") ?: "Desconhecido"
         val especie = intent.getStringExtra("especie") ?: ""
@@ -141,7 +141,6 @@ fun DetalhesPetScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
@@ -158,20 +157,25 @@ fun DetalhesPetScreen(
                     }
                 }
 
-
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = CircleShape,
                     color = Color.White,
+                    shadowElevation = 4.dp,
                     modifier = Modifier
                         .padding(end = 16.dp, top = 40.dp)
                         .align(Alignment.TopEnd)
-                        .clickable { partilharPet(context, nomeLimpo, especie, localizacao, textoTag) },
-                    shadowElevation = 4.dp
+                        .clickable { partilharPet(context, nomeLimpo, especie, localizacao, textoTag) }
                 ) {
-                    Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Share, contentDescription = "Partilhar", modifier = Modifier.size(16.dp), tint = Color(0xFF1C2723))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Partilhar", fontWeight = FontWeight.Bold, color = Color(0xFF1C2723))
+                    Box(
+                        modifier = Modifier.padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Partilhar",
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.Black
+                        )
                     }
                 }
             }
@@ -239,7 +243,6 @@ fun DetalhesPetScreen(
         }
     }
 }
-
 
 fun abrirWhatsApp(context: Context, telefone: String, nomePet: String) {
     try {

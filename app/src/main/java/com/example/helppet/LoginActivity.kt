@@ -292,10 +292,12 @@ fun LoginScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
                 ) {
-
-                    Text("", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
-                }
-            }
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_apple),
+                        contentDescription = "Entrar com a Apple",
+                        modifier = Modifier.size(48.dp)
+                    )
+                }}
 
             Spacer(modifier = Modifier.height(48.dp))
 
