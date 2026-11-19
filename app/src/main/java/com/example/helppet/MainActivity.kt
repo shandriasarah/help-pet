@@ -149,35 +149,8 @@ fun MainScreen() {
 
 
             if (showAddMenu) {
-                Dialog(onDismissRequest = { showAddMenu = false }) {
-                    Surface(shape = RoundedCornerShape(24.dp), color = Color.White, shadowElevation = 8.dp) {
-                        Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("O que você deseja fazer?", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = primaryGreen)
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            ActionCard("Perdi um animal", R.drawable.ic_perdi_alert, Color(0xFFFCE8E6), Color(0xFFC53929)) {
-                                showAddMenu = false
-                                context.startActivity(Intent(context, PerdiAnimalActivity::class.java))
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            ActionCard("Encontrei um animal", R.drawable.ic_encontrei_pet, Color(0xFFE6F4EA), primaryGreen) {
-                                showAddMenu = false
-                                context.startActivity(Intent(context, EncontreiAnimalActivity::class.java))
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            ActionCard("Quero adotar", R.drawable.ic_adotar, Color(0xFFFEF7E0), Color(0xFFB06000)) {
-                                showAddMenu = false
-                                context.startActivity(Intent(context, QueroAdotarActivity::class.java))
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            ActionCard("Colocar para Adoção", R.drawable.ic_nav_pets, Color(0xFFF3E5F5), Color(0xFF6A1B9A)) {
-                                showAddMenu = false
-                                context.startActivity(Intent(context, DoarAnimalActivity::class.java))
-                            }
-                        }
-                    }
-                }
-            }
+            MenuAdicionarPet(onDismiss = { showAddMenu = false })
+        }
         }
     }
 }
