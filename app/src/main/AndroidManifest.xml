@@ -26,6 +26,7 @@
         <activity android:name=".NotificacoesActivity" android:exported="false" />
         <activity android:name=".MapaActivity" android:exported="false" />
         <activity android:name=".EditarAnimalActivity" />
+        <activity android:name=".PublicadoActivity" android:exported="false" />
 
 
 

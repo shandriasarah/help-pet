@@ -116,13 +116,13 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        "Perfil Registado!",
+                        "Perfil registrado!",
                         color = primaryGreen,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Procuramos na nossa base de dados os pets que combinam com o teu perfil.",
+                        "Procuramos na nossa base de dados os pets que combinam com o seu perfil.",
                         color = textSecondary,
                         fontSize = 14.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -132,7 +132,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Pets sugeridos para ti:", color = textDark, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Pets sugeridos para você:", color = textDark, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
             if (isLoadingPets) {
@@ -141,7 +141,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                 }
             } else if (petsSugeridos.isEmpty()) {
                 Text(
-                    "No momento, não temos pets disponíveis com essas características exatas. Mas não te preocupes, o teu perfil está ativo e ONGs entrarão em contacto!",
+                    "No momento, não temos pets disponíveis com essas características. Mas não se preocupe: seu perfil está ativo e ONGs poderão entrar em contato!",
                     color = textHint,
                     fontSize = 14.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -180,13 +180,13 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
 
             Text("Perfil de Adotante", color = primaryGreen, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(
-                "Regista o teu interesse. Vamos ajudar-te a encontrar o teu novo melhor amigo!",
+                "Registre seu interesse. Vamos ajudar você a encontrar seu novo melhor amigo!",
                 color = textSecondary,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
             )
 
-            LabelWithStar("Que pet procuras? ", isMandatory = true)
+            LabelWithStar("Que pet você procura? ", isMandatory = true)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 QuickChip("Cachorro", especieDesejada == "Cachorro") { especieDesejada = "Cachorro" }
                 QuickChip("Gato", especieDesejada == "Gato") { especieDesejada = "Gato" }
@@ -213,14 +213,14 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                 QuickChip("Grande", porteIdeal == "Grande") { porteIdeal = "Grande" }
             }
 
-            LabelWithStar("Onde vives? ", isMandatory = true)
+            LabelWithStar("Onde você mora? ", isMandatory = true)
             DropdownCampo(
                 label = "Ex: Apartamento, Casa com quintal...",
                 options = listOf("Apartamento", "Casa sem quintal", "Casa com quintal"),
                 selected = tipoMoradia
             ) { tipoMoradia = it }
 
-            LabelWithStar("O teu WhatsApp ", isMandatory = true)
+            LabelWithStar("Seu WhatsApp ", isMandatory = true)
             OutlinedTextField(
                 value = telefone,
                 onValueChange = { newValue ->
@@ -234,11 +234,11 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().height(60.dp)
             )
 
-            LabelWithStar("Por que queres adotar? ", isMandatory = false)
+            LabelWithStar("Por que você quer adotar? ", isMandatory = false)
             OutlinedTextField(
                 value = sobreMim,
                 onValueChange = { sobreMim = it },
-                placeholder = { Text("Fala um pouco sobre ti, a tua rotina e quem mora contigo.", color = textHint) },
+                placeholder = { Text("Fale um pouco sobre você, sua rotina e quem mora com você.", color = textHint) },
                 colors = customTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().height(120.dp),
@@ -257,7 +257,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                     }
 
                     if (especieDesejada.isEmpty() || porteIdeal.isEmpty() || tipoMoradia.isEmpty() || telefone.length < 10) {
-                        Toast.makeText(context, "Por favor, preenche todos os campos obrigatórios!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Por favor, preencha todos os campos obrigatórios!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     isLoading = true
@@ -289,9 +289,9 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
                                     if (nome.contains("Para Adoção", ignoreCase = true)) {
 
                                         val matchEspecie = especieDesejada == "Qualquer" || especiePet.contains(especieDesejada, ignoreCase = true)
-                                        val matchPorte = racaOuPorte.contains(porteIdeal, ignoreCase = true)
+                                        // O cadastro de adocao nao guarda o porte, entao a sugestao filtra so pela especie
 
-                                        if (matchEspecie && matchPorte) {
+                                        if (matchEspecie) {
                                             Animal(
                                                 id = doc.id,
                                                 nome = nome,

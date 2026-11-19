@@ -64,6 +64,7 @@ fun MainScreen() {
     var animais by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var showAddMenu by remember { mutableStateOf(false) }
+    var busca by remember { mutableStateOf("") }
 
     var categoriaSelecionada by remember { mutableStateOf("Todos") }
     val categorias = listOf("Todos", "Cachorros", "Gatos", "Outros")
@@ -75,20 +76,32 @@ fun MainScreen() {
                     isLoading = false
                     return@addSnapshotListener
                 }
-                val lista = snapshot.documents.mapNotNull { document ->
+                animais = snapshot.documents.mapNotNull { document ->
                     document.toObject(Animal::class.java)?.copy(id = document.id)
                 }
-                animais = lista
                 isLoading = false
             }
     }
 
-    val animaisFiltrados = if (categoriaSelecionada == "Todos") {
-        animais
-    } else {
-        animais.filter { animal ->
-            animal.especie.equals(categoriaSelecionada.dropLast(1), ignoreCase = true)
+    val termo = busca.trim()
+    val animaisFiltrados = animais.filter { animal ->
+        val passaCategoria = when (categoriaSelecionada) {
+            "Cachorros" -> animal.especie.equals("Cachorro", ignoreCase = true)
+            "Gatos" -> animal.especie.equals("Gato", ignoreCase = true)
+            "Outros" -> !animal.especie.equals("Cachorro", ignoreCase = true) &&
+                !animal.especie.equals("Gato", ignoreCase = true)
+            else -> true
         }
+        val passaBusca = termo.isEmpty() ||
+            nomeDeExibicao(animal).contains(termo, ignoreCase = true) ||
+            animal.raca.contains(termo, ignoreCase = true) ||
+            animal.especie.contains(termo, ignoreCase = true) ||
+            animal.descricao.contains(termo, ignoreCase = true)
+        passaCategoria && passaBusca
+    }
+
+    fun abrirAba(status: StatusPet) {
+        context.startActivity(Intent(context, AnimaisActivity::class.java).putExtra("aba", status.aba))
     }
 
     Scaffold(
@@ -100,57 +113,113 @@ fun MainScreen() {
         },
         containerColor = backgroundOffWhite
     ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)) {
+                HeaderSection()
+            }
 
+            BarraBusca(
+                texto = busca,
+                aoMudar = { busca = it },
+                modifier = Modifier.padding(horizontal = 24.dp)
+            )
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Atalhos com a quantidade de pets em cada situacao
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Box(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)) {
-                    HeaderSection()
+                StatusPet.entries.forEach { status ->
+                    AtalhoStatus(
+                        status = status,
+                        quantidade = animais.count { statusDoAnimal(it) == status },
+                        modifier = Modifier.weight(1f),
+                        onClick = { abrirAba(status) }
+                    )
                 }
+            }
 
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(categorias) { categoria ->
-                        FilterChipCustom(
-                            texto = categoria,
-                            isSelected = categoria == categoriaSelecionada,
-                            onClick = { categoriaSelecionada = categoria },
-                            primaryGreen = primaryGreen
-                        )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(categorias) { categoria ->
+                    FilterChipCustom(
+                        texto = categoria,
+                        isSelected = categoria == categoriaSelecionada,
+                        onClick = { categoriaSelecionada = categoria },
+                        primaryGreen = primaryGreen
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (termo.isEmpty()) "Pets cadastrados" else "Resultados da busca",
+                    color = colorResource(id = R.color.text_primary),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                if (!isLoading) {
+                    Text(
+                        text = "${animaisFiltrados.size} ${if (animaisFiltrados.size == 1) "pet" else "pets"}",
+                        color = colorResource(id = R.color.text_secondary),
+                        fontSize = 13.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                when {
+                    isLoading -> repeat(2) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            CardEsqueleto(modifier = Modifier.weight(1f))
+                            CardEsqueleto(modifier = Modifier.weight(1f))
+                        }
                     }
-                }
-
-                Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = primaryGreen, modifier = Modifier.align(Alignment.CenterHorizontally))
-                    } else if (animaisFiltrados.isEmpty()) {
-                        Text(
-                            text = "Nenhum pet encontrado.",
-                            color = colorResource(id = R.color.text_secondary),
-                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 20.dp)
-                        )
-                    } else {
-                        animaisFiltrados.forEach { animal ->
-                            AnimalCardPremium(animal = animal, primaryGreen = primaryGreen)
-                            Spacer(modifier = Modifier.height(20.dp))
+                    animaisFiltrados.isEmpty() -> EstadoVazio(
+                        titulo = if (termo.isEmpty()) "Nenhum pet por aqui ainda" else "Nada encontrado",
+                        mensagem = if (termo.isEmpty()) "Seja o primeiro a cadastrar um pet." else "Tente buscar por outro nome, raça ou bairro.",
+                        textoBotao = if (termo.isEmpty()) "Cadastrar um pet" else "Limpar busca",
+                        onBotao = { if (termo.isEmpty()) showAddMenu = true else busca = "" }
+                    )
+                    else -> animaisFiltrados.chunked(2).forEach { linha ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            linha.forEach { animal ->
+                                CardPetGrade(animal = animal, modifier = Modifier.weight(1f))
+                            }
+                            if (linha.size == 1) Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
 
-
-            if (showAddMenu) {
-            MenuAdicionarPet(onDismiss = { showAddMenu = false })
+            Spacer(modifier = Modifier.height(32.dp))
         }
+
+        if (showAddMenu) {
+            MenuAdicionarPet(onDismiss = { showAddMenu = false })
         }
     }
 }

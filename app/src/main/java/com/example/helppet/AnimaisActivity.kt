@@ -38,7 +38,8 @@ class AnimaisActivity : ComponentActivity() {
             MaterialTheme {
                 AnimaisScreen(
                     onBackClick = { finish() },
-                    onHomeClick = { finish() }
+                    onHomeClick = { finish() },
+                    abaInicial = intent.getStringExtra("aba") ?: "Desaparecidos"
                 )
             }
         }
@@ -46,12 +47,12 @@ class AnimaisActivity : ComponentActivity() {
 }
 
 @Composable
-fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit) {
+fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit, abaInicial: String = "Desaparecidos") {
     val backgroundColor = colorResource(id = R.color.background_offwhite)
     val context = LocalContext.current
     val db = remember { FirebaseFirestore.getInstance() }
 
-    var tabSelecionada by remember { mutableStateOf("Desaparecidos") }
+    var tabSelecionada by remember { mutableStateOf(abaInicial) }
     val abas = listOf("Desaparecidos", "Achados", "Adoção")
 
     var showAddMenu by remember { mutableStateOf(false) }
