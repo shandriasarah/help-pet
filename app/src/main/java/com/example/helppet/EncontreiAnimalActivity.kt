@@ -158,7 +158,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        Text("Como queres identificar o pet?", color = textDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text("Como você quer identificar o pet?", color = textDark, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             SelectionCard(
@@ -182,7 +182,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
         Spacer(modifier = Modifier.height(20.dp))
 
         if (modoIdentificacao == "lista") {
-            LabelWithStar("Seleciona o pet desaparecido ", isMandatory = true)
+            LabelWithStar("Selecione o pet desaparecido ", isMandatory = true)
 
             if (isLoadingPerdidos) {
                 Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -202,7 +202,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                         Text("Nenhum pet cadastrado como perdido no momento.", color = Color.Gray, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Usar modo de Tirar Foto",
+                            text = "Usar o modo Tirar foto",
                             color = primaryGreen,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { modoIdentificacao = "foto" }
@@ -285,7 +285,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
             maxLines = 3
         )
 
-        LabelWithStar("O teu WhatsApp ", isMandatory = true)
+        LabelWithStar("Seu WhatsApp ", isMandatory = true)
         OutlinedTextField(
             value = telefone,
             onValueChange = { newValue ->
@@ -308,16 +308,16 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
 
                 if (modoIdentificacao == "lista") {
                     if (petPerdidoSelecionado == null) {
-                        Toast.makeText(context, "Seleciona qual pet da lista encontraste!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Selecione qual pet da lista você encontrou!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (localizacao.isEmpty() || !FormValidator.validarTelefone(telefone)) {
-                        Toast.makeText(context, "Preenche o local onde encontraste e um WhatsApp válido!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Preencha o local onde você encontrou o pet e um WhatsApp válido!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                 } else {
                     if (especieFinal.isEmpty() || porte.isEmpty() || corPrincipal.isEmpty() || localizacao.isEmpty() || !FormValidator.validarTelefone(telefone)) {
-                        Toast.makeText(context, "Por favor, preenche as informações rápidas e um telefone válido!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Por favor, preencha as informações e um telefone válido!", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                 }
@@ -341,20 +341,23 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
 
                         val updates = hashMapOf<String, Any>(
                             "nome" to novoNome,
-                            "descricao" to "Encontrado em: $localizacao",
+                            "descricao" to "${petSel.descricao}\n\nEncontrado em: $localizacao".trim(),
                             "telefoneContato" to telefone,
                             "fotoUrl" to linkDaFoto
                         )
 
                         db.collection("animais").document(petSel.id).update(updates)
                             .addOnSuccessListener {
-                                NotificacaoHelper.enviarAlerta(
-                                    titulo = "Notícia sobre $nomeLimpo!",
-                                    mensagem = "O pet $nomeLimpo foi marcado como '$statusResgate' perto de $localizacao! Contacto: $telefone"
-
-                                )
+                                if (petSel.donoId.isNotEmpty()) {
+                                    // Alerta privado: so o dono do pet ve (inclui o contato de quem encontrou)
+                                    NotificacaoHelper.enviarAlerta(
+                                        titulo = "Notícia sobre $nomeLimpo!",
+                                        mensagem = "O pet $nomeLimpo foi marcado como '$statusResgate' perto de $localizacao! Contato: $telefone",
+                                        destinatarioId = petSel.donoId
+                                    )
+                                }
                                 isLoading = false
-                                Toast.makeText(context, "Status atualizado! O pet foi retirado do mapa de buscas.", Toast.LENGTH_LONG).show()
+                                abrirTelaPublicado(context, StatusPet.ENCONTRADO, nomeLimpo, avisouDono = true)
                                 onBackClick()
                             }
                             .addOnFailureListener {
@@ -384,7 +387,7 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                                     mensagem = "$especieFinal ($corPrincipal, porte $porte) visto em: $localizacao."
                                 )
                                 isLoading = false
-                                Toast.makeText(context, "Alerta enviado! Obrigado por ajudares.", Toast.LENGTH_LONG).show()
+                                abrirTelaPublicado(context, StatusPet.ENCONTRADO, "$especieFinal $corPrincipal".trim())
                                 onBackClick()
                             }
                             .addOnFailureListener {

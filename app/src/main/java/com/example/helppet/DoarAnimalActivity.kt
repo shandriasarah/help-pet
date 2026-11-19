@@ -91,7 +91,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Cadastrar Animal", color = primaryGreen, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Preenche os dados com carinho para ajudar este pet a encontrar a família perfeita.", color = textSecondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
+        Text(text = "Preencha os dados com carinho para ajudar este pet a encontrar a família perfeita.", color = textSecondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
 
         LabelWithStar("Foto bonita do pet ", isMandatory = true)
         val dashPath = PathEffect.dashPathEffect(floatArrayOf(20f, 10f), 0f)
@@ -147,7 +147,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
         OutlinedTextField(value = raca, onValueChange = { raca = it }, placeholder = { Text("Ex: Vira-lata", color = textHint) }, colors = customTextFieldColors(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
 
         LabelWithStar("Idade aproximada ", isMandatory = true)
-        DropdownCampo(label = "Seleciona a idade...", options = listOf("Filhote (0 a 1 ano)", "Jovem (1 a 3 anos)", "Adulto (3 a 7 anos)", "Idoso (7+ anos)"), selected = idade) { idade = it }
+        DropdownCampo(label = "Selecione a idade...", options = listOf("Filhote (0 a 1 ano)", "Jovem (1 a 3 anos)", "Adulto (3 a 7 anos)", "Idoso (7+ anos)"), selected = idade) { idade = it }
 
         LabelWithStar("Saúde ", isMandatory = true)
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -165,7 +165,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
         OutlinedTextField(value = telefone, onValueChange = { newValue -> val digits = newValue.filter { it.isDigit() }; if (digits.length <= 11) telefone = digits }, placeholder = { Text("DDD + Número", color = textHint) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), colors = customTextFieldColors(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
 
         LabelWithStar("História do pet ", isMandatory = true)
-        OutlinedTextField(value = descricao, onValueChange = { descricao = it }, placeholder = { Text("É brincalhão? Dá-se bem com crianças?", color = textHint) }, colors = customTextFieldColors(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(120.dp), maxLines = 4)
+        OutlinedTextField(value = descricao, onValueChange = { descricao = it }, placeholder = { Text("É brincalhão? Se dá bem com crianças?", color = textHint) }, colors = customTextFieldColors(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(120.dp), maxLines = 4)
         Spacer(modifier = Modifier.height(40.dp))
 
         Button(
@@ -174,7 +174,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
                 val especieFinal = if (especie == "Outro") especieOutroTexto.trim() else especie
 
                 if (nomePet.isEmpty() || especieFinal.isEmpty() || genero.isEmpty() || idade.isEmpty() || vacinadoCastrado.isEmpty() || telefone.length < 10) {
-                    Toast.makeText(context, "Por favor, preenche os campos obrigatórios!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Por favor, preencha os campos obrigatórios!", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
                 isLoading = true
@@ -205,7 +205,7 @@ fun DoarAnimalScreen(onBackClick: () -> Unit) {
                     db.collection("animais").add(petAdocao)
                         .addOnSuccessListener {
                             isLoading = false
-                            Toast.makeText(context, "Pet cadastrado para adoção com sucesso!", Toast.LENGTH_LONG).show()
+                            abrirTelaPublicado(context, StatusPet.ADOCAO, nomePet.trim())
                             onBackClick()
                         }
                         .addOnFailureListener {

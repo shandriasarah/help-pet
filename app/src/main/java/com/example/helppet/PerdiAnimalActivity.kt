@@ -100,7 +100,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Cadastrar Pet Perdido", color = accentRed, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(text = "Dá o máximo de detalhes possível para ajudar na busca.", color = textSecondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
+        Text(text = "Dê o máximo de detalhes possível para ajudar na busca.", color = textSecondary, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
 
         LabelWithStar("Foto nítida do pet ", isMandatory = true)
         val dashPath = PathEffect.dashPathEffect(floatArrayOf(20f, 10f), 0f)
@@ -165,7 +165,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
         LabelWithStar("Onde foi visto por último? ", isMandatory = true)
         OutlinedTextField(value = localVisto, onValueChange = { localVisto = it }, placeholder = { Text("Bairro, Rua, Referência...", color = textHint) }, colors = customTextFieldColors(accentRed), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
 
-        LabelWithStar("Teu WhatsApp ", isMandatory = true)
+        LabelWithStar("Seu WhatsApp ", isMandatory = true)
         OutlinedTextField(value = telefone, onValueChange = { newValue -> val digits = newValue.filter { it.isDigit() }; if (digits.length <= 11) telefone = digits }, placeholder = { Text("DDD + Número", color = textHint) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), colors = customTextFieldColors(accentRed), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -176,7 +176,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
                 val especieFinal = if (especie == "Outro") especieOutroTexto.trim() else especie
 
                 if (!FormValidator.validarNomePet(nomePet) || !FormValidator.validarTelefone(telefone) || especieFinal.isEmpty() || genero.isEmpty() || caracteristicas.isEmpty() || localVisto.isEmpty()) {
-                    Toast.makeText(context, "Por favor, preenche os campos obrigatórios corretamente!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Por favor, preencha os campos obrigatórios corretamente!", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
                 isLoading = true
@@ -210,7 +210,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
                                 mensagem = "$nomePet ($especieFinal) desapareceu perto de $localVisto. Viu este pet?"
                             )
                             isLoading = false
-                            Toast.makeText(context, "Pet reportado como perdido com sucesso!", Toast.LENGTH_LONG).show()
+                            abrirTelaPublicado(context, StatusPet.PERDIDO, nomePet.trim())
                             onBackClick()
                         }
                         .addOnFailureListener {

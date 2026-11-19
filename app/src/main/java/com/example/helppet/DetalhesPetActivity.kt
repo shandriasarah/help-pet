@@ -360,7 +360,7 @@ fun partilharPet(context: Context, nome: String, especie: String, local: String,
         putExtra(Intent.EXTRA_TEXT, textoPartilha)
         type = "text/plain"
     }
-    val shareIntent = Intent.createChooser(sendIntent, "Partilhar pet via...")
+    val shareIntent = Intent.createChooser(sendIntent, "Compartilhar pet via...")
     context.startActivity(shareIntent)
 }
 
