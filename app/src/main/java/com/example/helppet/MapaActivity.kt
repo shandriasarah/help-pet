@@ -1,17 +1,31 @@
 package com.example.helppet
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -148,15 +162,13 @@ fun MapaScreen() {
                     }
                 },
                 update = { mapView ->
+                    val ctxMapa = mapView.context
                     mapView.overlays.clear()
 
 
 
                     val listaParaExibir = if (animaisNoBanco.isNotEmpty()) {
-                        animaisNoBanco.filter { animal ->
-                            animal.nome.contains("Perdido", ignoreCase = true) ||
-                                    animal.nome.contains("Desaparecido", ignoreCase = true)
-                        }
+                        animaisNoBanco.filter { animal -> statusDoAnimal(animal) != StatusPet.ADOCAO }
                     } else {
 
                         listOf(
@@ -170,7 +182,7 @@ fun MapaScreen() {
                         )
                     }
 
-                    listaParaExibir.forEachIndexed { index, animal ->
+                    listaParaExibir.forEach { animal ->
                         val ponto = obterCoordenadasRecife(animal.descricao, animal.id.hashCode())
                         val isPerdido = animal.nome.contains("Perdido", ignoreCase = true) ||
                                 animal.nome.contains("Desaparecido", ignoreCase = true)
@@ -193,41 +205,102 @@ fun MapaScreen() {
                         mapView.overlays.add(circuloRegiao)
 
 
+                        // Pin proprio: circulo na cor do status com uma patinha. Um toque abre o perfil do pet.
                         val marcador = Marker(mapView).apply {
                             position = ponto
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            title = animal.nome
-                            snippet = "${animal.descricao.ifEmpty { "Recife, PE" }} (Raio aprox. de 450m)"
-
-                            setOnMarkerClickListener { marker, _ ->
-                                if (marker.isInfoWindowShown && animal.id !in listOf("demo1", "demo2", "demo3")) {
-                                    val intent = Intent(context, DetalhesPetActivity::class.java).apply {
-                                        putExtra("nome", animal.nome)
-                                        putExtra("especie", animal.especie)
-                                        putExtra("raca", animal.raca)
-                                        putExtra("genero", animal.genero)
-                                        putExtra("idade", animal.idade)
-                                        putExtra("fotoUrl", animal.fotoUrl)
-                                        putExtra("descricao", animal.descricao)
-                                        putExtra("telefone", animal.telefoneContato)
-                                    }
-                                    context.startActivity(intent)
-                                } else {
-                                    marker.showInfoWindow()
+                            icon = criarIconeMarcador(
+                                ctxMapa,
+                                if (isPerdido) AndroidColor.rgb(197, 57, 41) else AndroidColor.rgb(27, 77, 62)
+                            )
+                            infoWindow = null
+                            title = nomeDeExibicao(animal)
+                            setOnMarkerClickListener { _, _ ->
+                                if (animal.id !in listOf("demo1", "demo2", "demo3")) {
+                                    abrirDetalhesPet(context, animal)
                                 }
                                 true
                             }
                         }
                         mapView.overlays.add(marcador)
-                        if (index == 0) marcador.showInfoWindow()
                     }
 
                     mapView.invalidate()
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(14.dp),
+                shadowElevation = 4.dp,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(12.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(10.dp).background(Color(0xFFC53929), CircleShape))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Desaparecido", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C2723))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Box(modifier = Modifier.size(10.dp).background(Color(0xFF1B4D3E), CircleShape))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Encontrado", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C2723))
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text("Toque no pin para ver o perfil do pet", fontSize = 12.sp, color = Color(0xFF757575))
+                }
+            }
         }
     }
+}
+
+/** Desenha o pin do mapa: circulo colorido com borda branca, patinha branca e ponta embaixo. */
+private fun criarIconeMarcador(context: Context, cor: Int): BitmapDrawable {
+    val d = context.resources.displayMetrics.density
+    val largura = (56 * d).toInt()
+    val altura = (72 * d).toInt()
+    val bitmap = Bitmap.createBitmap(largura, altura, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val tinta = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    val cx = largura / 2f
+    val raio = largura / 2f - 3 * d
+    val cy = raio + 2 * d
+
+    // Sombra suave
+    tinta.color = AndroidColor.argb(50, 0, 0, 0)
+    canvas.drawCircle(cx, cy + 2 * d, raio, tinta)
+
+    // Ponta do pin
+    val ponta = Path().apply {
+        moveTo(cx - raio * 0.55f, cy + raio * 0.6f)
+        lineTo(cx, altura - 1 * d)
+        lineTo(cx + raio * 0.55f, cy + raio * 0.6f)
+        close()
+    }
+    tinta.color = cor
+    canvas.drawPath(ponta, tinta)
+
+    // Circulo com borda branca
+    tinta.color = AndroidColor.WHITE
+    canvas.drawCircle(cx, cy, raio, tinta)
+    tinta.color = cor
+    canvas.drawCircle(cx, cy, raio - 3 * d, tinta)
+
+    // Patinha branca no centro
+    ContextCompat.getDrawable(context, R.drawable.ic_nav_pets)?.mutate()?.let { pata ->
+        pata.setTint(AndroidColor.WHITE)
+        val metade = (raio * 0.8f).toInt()
+        pata.setBounds((cx - metade).toInt(), (cy - metade).toInt(), (cx + metade).toInt(), (cy + metade).toInt())
+        pata.draw(canvas)
+    }
+
+    return BitmapDrawable(context.resources, bitmap)
 }
 
 
