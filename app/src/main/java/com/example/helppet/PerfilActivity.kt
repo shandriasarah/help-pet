@@ -10,22 +10,31 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,7 +51,6 @@ class PerfilActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 PerfilScreen(
-                    onBackClick = { finish() },
                     onLogout = {
                         FirebaseAuth.getInstance().signOut()
                         startActivity(Intent(this, LoginActivity::class.java))
@@ -54,15 +62,38 @@ class PerfilActivity : ComponentActivity() {
     }
 }
 
+private object TextosLegais {
+    val PRIVACIDADE = "Política de Privacidade" to """
+        O HelpPet guarda apenas os dados necessários para ajudar pets a encontrarem um lar ou voltarem para casa.
+
+        • Dados da conta: nome, e-mail e WhatsApp, usados para identificar você e permitir que outras pessoas entrem em contato sobre um pet.
+        • Anúncios: fotos, descrição e local aproximado dos pets que você cadastra ficam visíveis para todos os usuários do app.
+        • Notificações: alertas gerais são vistos por todos; alertas sobre o seu pet são enviados só para você.
+
+        Não vendemos nem compartilhamos seus dados com terceiros. Você pode editar ou apagar seus anúncios a qualquer momento e excluir sua conta em Perfil > Excluir minha conta, o que apaga também todos os seus anúncios.
+    """.trimIndent()
+
+    val TERMOS = "Termos de Uso" to """
+        Ao usar o HelpPet, você concorda em:
+
+        • Cadastrar apenas informações verdadeiras sobre os animais e sobre você.
+        • Não usar o app para vender animais nem para qualquer fim comercial.
+        • Respeitar as outras pessoas nos contatos feitos pelo WhatsApp.
+        • Atualizar ou remover o anúncio quando o pet for encontrado ou adotado.
+
+        O HelpPet conecta pessoas, mas não se responsabiliza pelas negociações e encontros entre usuários. Anúncios falsos ou ofensivos podem ser removidos.
+    """.trimIndent()
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
+fun PerfilScreen(onLogout: () -> Unit) {
     val context = LocalContext.current
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
     val userId = auth.currentUser?.uid
 
-    var userName by remember { mutableStateOf("Carregando...") }
+    var userName by remember { mutableStateOf("") }
     val userEmail = auth.currentUser?.email ?: ""
     val creationTimestamp = auth.currentUser?.metadata?.creationTimestamp ?: 0L
 
@@ -77,28 +108,44 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
         }
     }
 
+    val iniciais = remember(userName) {
+        userName.trim().split(" ")
+            .filter { it.isNotBlank() }
+            .take(2)
+            .joinToString("") { it.first().uppercase() }
+    }
+
     val backgroundOffWhite = colorResource(id = R.color.background_offwhite)
     val primaryGreen = colorResource(id = R.color.primary_green)
-    val textDark = Color(0xFF1C2723)
     val textHint = Color(0xFF9E9E9E)
     val colorAccentRed = Color(0xFFC53929)
 
     var showAlertaDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    var mostrarSairDialog by remember { mutableStateOf(false) }
+    var mostrarExcluirDialog by remember { mutableStateOf(false) }
+    var textoLegalAberto by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var excluindoConta by remember { mutableStateOf(false) }
 
     var meusAnimais by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var isLoadingAnimais by remember { mutableStateOf(true) }
+
+    val totalPerdidos = meusAnimais.count {
+        it.nome.contains("Perdido", ignoreCase = true) || it.nome.contains("Desaparecido", ignoreCase = true)
+    }
+    val totalAdocao = meusAnimais.count { it.nome.contains("Para Adoção", ignoreCase = true) }
 
     LaunchedEffect(userId) {
         if (userId != null) {
             db.collection("usuarios").document(userId).get()
                 .addOnSuccessListener { doc ->
-                    userName = doc.getString("nome") ?: "Utilizador"
+                    userName = doc.getString("nome") ?: auth.currentUser?.displayName ?: "Usuário"
                     savedAlertaEspecie = doc.getString("alertaEspecie") ?: "Qualquer"
                     savedAlertaRaio = doc.getString("alertaRaio") ?: "50 km"
                 }
-
+                .addOnFailureListener {
+                    userName = auth.currentUser?.displayName ?: "Usuário"
+                }
 
             db.collection("animais")
                 .whereEqualTo("donoId", userId)
@@ -108,197 +155,348 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                         return@addSnapshotListener
                     }
                     if (snapshot != null) {
-                        val animais = snapshot.documents.mapNotNull { doc ->
+                        meusAnimais = snapshot.documents.mapNotNull { doc ->
                             doc.toObject(Animal::class.java)?.copy(id = doc.id)
                         }
-                        meusAnimais = animais
                         isLoadingAnimais = false
                     }
                 }
+        } else {
+            isLoadingAnimais = false
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundOffWhite)
-            .verticalScroll(rememberScrollState())
-    ) {
+    fun abrirInicio() {
+        context.startActivity(Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        })
+    }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 24.dp, top = 32.dp, end = 24.dp, bottom = 24.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_arrow_seta),
-                contentDescription = "Voltar",
-                tint = textDark,
-                modifier = Modifier.size(24.dp).clickable { onBackClick() }
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Text("Perfil", color = textDark, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    fun excluirConta() {
+        val user = auth.currentUser ?: return
+        // O Firebase so deixa excluir a conta se o login foi feito ha pouco tempo
+        val ultimoLogin = user.metadata?.lastSignInTimestamp ?: 0L
+        if (System.currentTimeMillis() - ultimoLogin > 5 * 60 * 1000L) {
+            Toast.makeText(
+                context,
+                "Por segurança, saia e entre de novo na conta antes de excluí-la.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
         }
 
-
-        Text(
-            text = "INFORMAÇÕES DA CONTA",
-            color = textHint,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-        Surface(color = Color.White) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                InfoRow(label = "Nome", value = userName)
-                HorizontalDivider(color = Color(0xFFF0F0F0))
-                InfoRow(label = "Email", value = userEmail)
-                HorizontalDivider(color = Color(0xFFF0F0F0))
-                InfoRow(label = "Membro desde", value = memberSince)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        Text(
-            text = "MEUS ANÚNCIOS",
-            color = textHint,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
-
-        if (isLoadingAnimais) {
-            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryGreen)
-            }
-        } else if (meusAnimais.isEmpty()) {
-            Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Ainda não tens nenhum pet cadastrado.",
-                    color = textHint,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(24.dp)
-                )
-            }
-        } else {
-            Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                meusAnimais.forEach { animal ->
-                    MeuAnimalCard(
-                        animal = animal,
-                        primaryGreen = primaryGreen,
-                        onEdit = {
-                            val intent = Intent(context, EditarAnimalActivity::class.java).apply {
-                                putExtra("petId", animal.id)
-                                putExtra("nome", animal.nome)
-                                putExtra("especie", animal.especie)
-                                putExtra("raca", animal.raca)
-                                putExtra("descricao", animal.descricao)
-                                putExtra("telefone", animal.telefoneContato)
+        excluindoConta = true
+        db.collection("animais").whereEqualTo("donoId", user.uid).get()
+            .addOnSuccessListener { snapshot ->
+                val lote = db.batch()
+                snapshot.documents.forEach { lote.delete(it.reference) }
+                lote.delete(db.collection("usuarios").document(user.uid))
+                lote.commit()
+                    .addOnSuccessListener {
+                        user.delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Conta excluída. Obrigado por ajudar os pets!", Toast.LENGTH_LONG).show()
+                                onLogout()
                             }
-                            context.startActivity(intent)
-                        },
-                        onDelete = {
+                            .addOnFailureListener { e ->
+                                excluindoConta = false
+                                Toast.makeText(context, mensagemErroAuth(e), Toast.LENGTH_LONG).show()
+                            }
+                    }
+                    .addOnFailureListener {
+                        excluindoConta = false
+                        Toast.makeText(context, "Não foi possível apagar seus dados. Tente novamente.", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .addOnFailureListener {
+                excluindoConta = false
+                Toast.makeText(context, "Sem conexão. Verifique sua internet e tente de novo.", Toast.LENGTH_LONG).show()
+            }
+    }
 
-                            db.collection("animais").document(animal.id)
-                                .delete()
-                                .addOnSuccessListener {
-                                    Toast.makeText(context, "Anúncio excluído com sucesso!", Toast.LENGTH_SHORT).show()
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Erro ao excluir anúncio.", Toast.LENGTH_SHORT).show()
-                                }
+    Scaffold(
+        bottomBar = {
+            MenuInferior(telaAtual = "Perfil", onAddClick = { abrirInicio() })
+        },
+        containerColor = backgroundOffWhite
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Cabecalho com avatar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(primaryGreen, RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
+                    .padding(start = 24.dp, end = 24.dp, top = 32.dp, bottom = 28.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(88.dp)
+                            .background(Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (iniciais.isNotEmpty()) {
+                            Text(iniciais, color = primaryGreen, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = primaryGreen,
+                                modifier = Modifier.size(44.dp)
+                            )
                         }
+                    }
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = userName.ifEmpty { "Carregando..." },
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    if (userEmail.isNotEmpty()) {
+                        Text(userEmail, color = Color.White.copy(alpha = 0.85f), fontSize = 14.sp)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Membro desde $memberSince",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 12.sp
                     )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        Surface(color = Color.White, modifier = Modifier.clickable { showAlertaDialog = true }) {
+            // Numeros do usuario
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(imageVector = Icons.Default.NotificationsActive, contentDescription = null, tint = primaryGreen)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text("Alertas por região", color = textDark, fontSize = 16.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-                Text(">", color = textHint, fontSize = 18.sp)
+                EstatisticaCard("Anúncios", meusAnimais.size, primaryGreen, Modifier.weight(1f))
+                EstatisticaCard("Perdidos", totalPerdidos, colorAccentRed, Modifier.weight(1f))
+                EstatisticaCard("Adoção", totalAdocao, Color(0xFFB06000), Modifier.weight(1f))
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            TituloSecao("MEUS ANÚNCIOS")
 
+            if (isLoadingAnimais) {
+                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = primaryGreen)
+                }
+            } else if (meusAnimais.isEmpty()) {
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxWidth()
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Pets,
+                            contentDescription = null,
+                            tint = Color(0xFFBDBDBD),
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Você ainda não cadastrou nenhum pet.",
+                            color = textHint,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        TextButton(onClick = { abrirInicio() }) {
+                            Text("Cadastrar agora", color = primaryGreen, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    meusAnimais.forEach { animal ->
+                        MeuAnimalCard(
+                            animal = animal,
+                            primaryGreen = primaryGreen,
+                            onEdit = {
+                                val intent = Intent(context, EditarAnimalActivity::class.java).apply {
+                                    putExtra("petId", animal.id)
+                                    putExtra("nome", animal.nome)
+                                    putExtra("especie", animal.especie)
+                                    putExtra("raca", animal.raca)
+                                    putExtra("descricao", animal.descricao)
+                                    putExtra("telefone", animal.telefoneContato)
+                                }
+                                context.startActivity(intent)
+                            },
+                            onDelete = {
+                                db.collection("animais").document(animal.id)
+                                    .delete()
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Anúncio excluído com sucesso!", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Erro ao excluir anúncio.", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        )
+                    }
+                }
+            }
 
-        Text(
-            text = "LEGAL",
-            color = textHint,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-        )
+            Spacer(modifier = Modifier.height(24.dp))
+            TituloSecao("CONFIGURAÇÕES")
 
-        Surface(color = Color.White) {
+            Surface(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .fillMaxWidth()
+            ) {
+                Column {
+                    ItemMenuPerfil(
+                        icone = Icons.Filled.NotificationsActive,
+                        titulo = "Alertas por região",
+                        subtitulo = "$savedAlertaEspecie · $savedAlertaRaio",
+                        corIcone = primaryGreen,
+                        onClick = { showAlertaDialog = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 64.dp), color = Color(0xFFF0F0F0))
+                    ItemMenuPerfil(
+                        icone = Icons.Filled.Lock,
+                        titulo = "Política de Privacidade",
+                        corIcone = primaryGreen,
+                        onClick = { textoLegalAberto = TextosLegais.PRIVACIDADE }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(start = 64.dp), color = Color(0xFFF0F0F0))
+                    ItemMenuPerfil(
+                        icone = Icons.Filled.Description,
+                        titulo = "Termos de Uso",
+                        corIcone = primaryGreen,
+                        onClick = { textoLegalAberto = TextosLegais.TERMOS }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Text(
-                    text = "Política de Privacidade",
-                    color = primaryGreen,
-                    fontSize = 16.sp,
+                OutlinedButton(
+                    onClick = { mostrarSairDialog = true },
+                    border = BorderStroke(1.dp, primaryGreen),
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .clickable { }
-                )
-                HorizontalDivider(color = Color(0xFFF0F0F0))
-                Text(
-                    text = "Termos de Uso",
-                    color = primaryGreen,
-                    fontSize = 16.sp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .clickable { }
-                )
+                        .height(54.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = primaryGreen,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sair da conta", color = primaryGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = { mostrarExcluirDialog = true },
+                    enabled = !excluindoConta,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (excluindoConta) {
+                        CircularProgressIndicator(
+                            color = colorAccentRed,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    } else {
+                        Text("Excluir minha conta", color = colorAccentRed, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-
-        Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-            OutlinedButton(
-                onClick = onLogout,
-                border = BorderStroke(1.dp, primaryGreen),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text("Sair", color = primaryGreen, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = { },
-                border = BorderStroke(1.dp, colorAccentRed),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text("Excluir minha conta", color = colorAccentRed, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(48.dp))
     }
 
+    if (mostrarSairDialog) {
+        AlertDialog(
+            onDismissRequest = { mostrarSairDialog = false },
+            containerColor = Color.White,
+            title = { Text("Sair da conta?", fontWeight = FontWeight.Bold) },
+            text = { Text("Você precisará entrar de novo para cadastrar ou acompanhar pets.") },
+            confirmButton = {
+                TextButton(onClick = { mostrarSairDialog = false; onLogout() }) {
+                    Text("Sair", color = primaryGreen, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarSairDialog = false }) { Text("Cancelar", color = Color.Gray) }
+            }
+        )
+    }
+
+    if (mostrarExcluirDialog) {
+        AlertDialog(
+            onDismissRequest = { mostrarExcluirDialog = false },
+            containerColor = Color.White,
+            icon = { Icon(imageVector = Icons.Filled.Warning, contentDescription = null, tint = colorAccentRed) },
+            title = { Text("Excluir sua conta?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Isso apaga sua conta e todos os seus anúncios (${meusAnimais.size}). " +
+                        "Essa ação não pode ser desfeita."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { mostrarExcluirDialog = false; excluirConta() }) {
+                    Text("Excluir", color = colorAccentRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarExcluirDialog = false }) { Text("Cancelar", color = Color.Gray) }
+            }
+        )
+    }
+
+    textoLegalAberto?.let { (titulo, corpo) ->
+        AlertDialog(
+            onDismissRequest = { textoLegalAberto = null },
+            containerColor = Color.White,
+            title = { Text(titulo, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(corpo, fontSize = 14.sp, lineHeight = 20.sp, color = Color(0xFF444444))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { textoLegalAberto = null }) {
+                    Text("Entendi", color = primaryGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
 
     if (showAlertaDialog) {
         ModalBottomSheet(
@@ -334,6 +532,68 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun TituloSecao(texto: String) {
+    Text(
+        text = texto,
+        color = Color(0xFF9E9E9E),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun EstatisticaCard(rotulo: String, valor: Int, cor: Color, modifier: Modifier = Modifier) {
+    Surface(color = Color.White, shape = RoundedCornerShape(16.dp), modifier = modifier) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 14.dp)
+        ) {
+            Text(valor.toString(), color = cor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(rotulo, color = Color(0xFF757575), fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun ItemMenuPerfil(
+    icone: ImageVector,
+    titulo: String,
+    corIcone: Color,
+    onClick: () -> Unit,
+    subtitulo: String? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(corIcone.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icone, contentDescription = null, tint = corIcone, modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(titulo, color = Color(0xFF1C2723), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            if (subtitulo != null) {
+                Text(subtitulo, color = Color(0xFF9E9E9E), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color(0xFFBDBDBD)
+        )
     }
 }
 

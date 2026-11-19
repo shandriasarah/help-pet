@@ -5,12 +5,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
@@ -60,10 +63,19 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
 
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Box(
-                    modifier = Modifier.size(46.dp).background(primaryGreen, CircleShape).clickable { onAddClick() },
+                    modifier = Modifier
+                        .size(52.dp)
+                        .shadow(6.dp, CircleShape)
+                        .background(primaryGreen, CircleShape)
+                        .clickable { onAddClick() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("+", color = Color.White, fontSize = 26.sp)
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Adicionar",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
                 }
             }
 
