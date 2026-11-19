@@ -1,5 +1,6 @@
 package com.example.helppet
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
 import android.widget.Toast
@@ -38,6 +39,14 @@ class RegisterActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 RegisterScreen(
+                    onContaCriada = {
+                        // A conta ja fica logada: vai direto para a pagina inicial
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        }
+                        startActivity(intent)
+                        finish()
+                    },
                     onBackToLogin = {
                         finish()
                     }
@@ -49,7 +58,7 @@ class RegisterActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onBackToLogin: () -> Unit) {
+fun RegisterScreen(onBackToLogin: () -> Unit, onContaCriada: () -> Unit) {
     val context = LocalContext.current
 
 
@@ -230,12 +239,13 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
                                     db.collection("usuarios").document(userId).set(userMap)
                                         .addOnSuccessListener {
                                             isLoading = false
-                                            Toast.makeText(context, "Conta criada com sucesso!", Toast.LENGTH_SHORT).show()
-                                            onBackToLogin()
+                                            Toast.makeText(context, "Conta criada com sucesso! Bem-vindo(a)!", Toast.LENGTH_SHORT).show()
+                                            onContaCriada()
                                         }
                                         .addOnFailureListener {
                                             isLoading = false
-                                            Toast.makeText(context, "Conta criada, mas erro ao salvar dados.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Conta criada! Não conseguimos salvar seu perfil, mas você já pode usar o app.", Toast.LENGTH_LONG).show()
+                                            onContaCriada()
                                         }
                                 }
                             } else {
