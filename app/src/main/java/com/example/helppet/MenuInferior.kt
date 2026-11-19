@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 private val ALTURA_FAIXA_ICONE = 40.dp
 private val ESPACO_ICONE_TEXTO = 4.dp
 private val ALTURA_TEXTO = 16.dp
+private val TAMANHO_BOTAO_ADICIONAR = 46.dp
 
 /**
  * Menu inferior do app. Todos os itens ficam centralizados na mesma linha
@@ -55,8 +56,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
-                    .padding(horizontal = 8.dp),
+                    .height(72.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BottomNavItem(
@@ -74,27 +74,27 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                     onClick = { abrir("Animais", AnimaisActivity::class.java) }
                 )
 
-                // Botao "+": circulo do mesmo tamanho da faixa dos icones, com rotulo embaixo
-                ItemMenuInferior(
-                    label = "Adicionar",
-                    cor = colorResource(id = R.color.text_secondary),
-                    negrito = false,
-                    modifier = Modifier.weight(1f),
-                    onClick = onAddClick
+                // Botao "+": sem legenda, circulo centralizado na altura da barra
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(ALTURA_FAIXA_ICONE)
+                            .size(TAMANHO_BOTAO_ADICIONAR)
                             .shadow(4.dp, CircleShape)
                             .clip(CircleShape)
-                            .background(primaryGreen),
+                            .background(primaryGreen)
+                            .clickable { onAddClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Adicionar",
                             tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
