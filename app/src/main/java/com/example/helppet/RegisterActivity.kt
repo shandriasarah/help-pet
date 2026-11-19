@@ -65,6 +65,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
     var emailError by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
+    var passwordErrorMsg by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
 
@@ -201,21 +202,22 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
                 ),
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )
-            if (passwordError) Text("A senha deve ter pelo menos 6 caracteres", color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(top = 4.dp))
+            if (passwordError) Text(passwordErrorMsg, color = Color.Red, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start).padding(top = 4.dp))
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
                     if (name.isEmpty()) { nameError = true; return@Button }
-                    if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) { emailError = true; return@Button }
+                    if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) { emailError = true; return@Button }
                     if (phone.isEmpty() || phone.length < 8) { phoneError = true; return@Button }
-                    if (password.isEmpty() || password.length < 6) { passwordError = true; return@Button }
+                    val erroSenha = erroSenhaCadastro(password)
+                    if (erroSenha != null) { passwordErrorMsg = erroSenha; passwordError = true; return@Button }
 
                     isLoading = true
 
 
-                    auth.createUserWithEmailAndPassword(email, password)
+                    auth.createUserWithEmailAndPassword(email.trim(), password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 val userId = auth.currentUser?.uid
@@ -238,7 +240,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
                                 }
                             } else {
                                 isLoading = false
-                                Toast.makeText(context, "Erro: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, mensagemErroAuth(task.exception), Toast.LENGTH_LONG).show()
                             }
                         }
                 },

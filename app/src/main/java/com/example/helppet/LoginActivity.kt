@@ -229,14 +229,14 @@ fun LoginScreen(
 
                     isLoading = true
 
-                    auth.signInWithEmailAndPassword(email, password)
+                    auth.signInWithEmailAndPassword(email.trim(), password)
                         .addOnCompleteListener { task ->
                             isLoading = false
                             if (task.isSuccessful) {
                                 Toast.makeText(context, "Login efetuado com sucesso!", Toast.LENGTH_SHORT).show()
                                 onLoginSuccess()
                             } else {
-                                Toast.makeText(context, "Erro: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, mensagemErroAuth(task.exception), Toast.LENGTH_LONG).show()
                             }
                         }
                 },
