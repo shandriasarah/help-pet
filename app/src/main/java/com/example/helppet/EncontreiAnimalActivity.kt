@@ -353,7 +353,8 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                                     NotificacaoHelper.enviarAlerta(
                                         titulo = "Notícia sobre $nomeLimpo!",
                                         mensagem = "O pet $nomeLimpo foi marcado como '$statusResgate' perto de $localizacao! Contato: $telefone",
-                                        destinatarioId = petSel.donoId
+                                        destinatarioId = petSel.donoId,
+                                        telefoneContato = telefone
                                     )
                                 }
                                 isLoading = false
