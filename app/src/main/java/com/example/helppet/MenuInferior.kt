@@ -27,12 +27,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val ALTURA_FAIXA_ICONE = 32.dp
-private val ESPACO_ICONE_TEXTO = 6.dp
+// Todos os itens usam exatamente as mesmas medidas, por isso ficam alinhados
+private val ALTURA_FAIXA_ICONE = 40.dp
+private val ESPACO_ICONE_TEXTO = 4.dp
+private val ALTURA_TEXTO = 16.dp
 
 /**
  * Menu inferior do app. Todos os itens ficam centralizados na mesma linha
- * (altura fixa de 76dp) e o menu reserva espaco para a barra de gestos do Android.
+ * (altura fixa de 72dp) e o menu reserva espaco para a barra de gestos do Android.
  */
 @Composable
 fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
@@ -53,7 +55,7 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(76.dp)
+                    .height(72.dp)
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -72,34 +74,29 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                     onClick = { abrir("Animais", AnimaisActivity::class.java) }
                 )
 
-                // Botao "+": mesma estrutura dos outros itens (faixa do icone + faixa do texto),
-                // assim o centro do circulo fica na mesma altura do centro dos icones
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.weight(1f).fillMaxHeight()
+                // Botao "+": circulo do mesmo tamanho da faixa dos icones, com rotulo embaixo
+                ItemMenuInferior(
+                    label = "Adicionar",
+                    cor = colorResource(id = R.color.text_secondary),
+                    negrito = false,
+                    modifier = Modifier.weight(1f),
+                    onClick = onAddClick
                 ) {
-                    Box(modifier = Modifier.height(ALTURA_FAIXA_ICONE), contentAlignment = Alignment.Center) {
-                        Box(
-                            modifier = Modifier
-                                .requiredSize(44.dp)
-                                .shadow(6.dp, CircleShape)
-                                .clip(CircleShape)
-                                .background(primaryGreen)
-                                .clickable { onAddClick() },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = "Adicionar",
-                                tint = Color.White,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .size(ALTURA_FAIXA_ICONE)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(primaryGreen),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Adicionar",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(ESPACO_ICONE_TEXTO))
-                    // Linha de texto vazia so para ocupar o mesmo espaco do rotulo dos outros itens
-                    Text(text = " ", fontSize = 12.sp, maxLines = 1)
                 }
 
                 BottomNavItem(
@@ -133,21 +130,11 @@ fun BottomNavItem(
     val textSecondary = colorResource(id = R.color.text_secondary)
     val cor = if (selecionado) primaryGreen else textSecondary
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxHeight()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-    ) {
+    ItemMenuInferior(label = label, cor = cor, negrito = selecionado, modifier = modifier, onClick = onClick) {
         // Indicador em formato de pilula atras do icone da tela atual
         Box(
             modifier = Modifier
-                .height(ALTURA_FAIXA_ICONE)
+                .height(32.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(if (selecionado) primaryGreen.copy(alpha = 0.12f) else Color.Transparent)
                 .padding(horizontal = 16.dp),
@@ -160,13 +147,43 @@ fun BottomNavItem(
                 modifier = Modifier.size(24.dp)
             )
         }
+    }
+}
+
+/** Estrutura unica de cada item: faixa do icone (40dp) + espaco + faixa do texto (16dp). */
+@Composable
+private fun ItemMenuInferior(
+    label: String,
+    cor: Color,
+    negrito: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    icone: @Composable () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+    ) {
+        Box(modifier = Modifier.height(ALTURA_FAIXA_ICONE), contentAlignment = Alignment.Center) {
+            icone()
+        }
         Spacer(modifier = Modifier.height(ESPACO_ICONE_TEXTO))
-        Text(
-            text = label,
-            color = cor,
-            fontSize = 12.sp,
-            fontWeight = if (selecionado) FontWeight.Bold else FontWeight.Medium,
-            maxLines = 1
-        )
+        Box(modifier = Modifier.height(ALTURA_TEXTO), contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                color = cor,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                fontWeight = if (negrito) FontWeight.Bold else FontWeight.Medium,
+                maxLines = 1
+            )
+        }
     }
 }
