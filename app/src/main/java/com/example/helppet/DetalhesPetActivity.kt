@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 
 class DetalhesPetActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +75,7 @@ fun DetalhesPetScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val escopo = rememberCoroutineScope()
     val primaryGreen = colorResource(id = R.color.primary_green)
     val textDark = Color(0xFF1C2723)
 
@@ -144,7 +146,19 @@ fun DetalhesPetScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(
-                            onClick = { partilharPet(context, nomeLimpo, especie, localizacao, textoTag) },
+                            onClick = {
+                                // Envia a foto + texto com link do WhatsApp pela janela de compartilhar do Android
+                                escopo.launch {
+                                    compartilharPetCompleto(
+                                        context,
+                                        Animal(
+                                            nome = nome, especie = especie, raca = raca, genero = genero,
+                                            idade = idade, fotoUrl = fotoUrl, descricao = descricao,
+                                            telefoneContato = telefone
+                                        )
+                                    )
+                                }
+                            },
                             shape = RoundedCornerShape(14.dp),
                             border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
                             contentPadding = PaddingValues(0.dp),
@@ -333,12 +347,14 @@ private fun InfoTile(rotulo: String, valor: String, modifier: Modifier = Modifie
 }
 
 fun abrirWhatsApp(context: Context, telefone: String, nomePet: String) {
+    abrirWhatsAppComMensagem(context, telefone, "Olá! Vi o anúncio do pet $nomePet no HelpPet e gostaria de conversar.")
+}
+
+fun abrirWhatsAppComMensagem(context: Context, telefone: String, mensagem: String) {
     try {
         val numeroLimpo = telefone.replace("\\D".toRegex(), "")
-        val mensagem = "Olá! Vi o anúncio do pet $nomePet no HelpPet e gostaria de falar contigo."
         val uri = Uri.parse("https://wa.me/55$numeroLimpo?text=${Uri.encode(mensagem)}")
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        context.startActivity(intent)
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri))
     } catch (e: Exception) {
         e.printStackTrace()
     }

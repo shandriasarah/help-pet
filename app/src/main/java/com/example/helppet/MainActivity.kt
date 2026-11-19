@@ -29,6 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
@@ -116,7 +121,7 @@ fun MainScreen() {
                 .verticalScroll(rememberScrollState())
         ) {
             Box(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 16.dp)) {
-                HeaderSection()
+                HeaderSection(animais = animais)
             }
 
             BarraBusca(
@@ -353,7 +358,7 @@ fun AttributeBadge(text: String) {
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(animais: List<Animal> = emptyList()) {
     val context = LocalContext.current
     val primaryGreen = colorResource(id = R.color.primary_green)
     val textPrimary = colorResource(id = R.color.text_primary)
@@ -362,6 +367,12 @@ fun HeaderSection() {
     var userName by remember { mutableStateOf("...") }
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
+    var mostrarCompartilhar by remember { mutableStateOf(false) }
+
+    // Avisos que chegaram depois da ultima vez que a pessoa abriu o sino
+    var datasNotificacoes by remember { mutableStateOf<List<Long>>(emptyList()) }
+    var ultimaVisita by remember { mutableStateOf(RegistroNotificacoes.ultimaVisita(context)) }
+    val naoLidas = datasNotificacoes.count { it > ultimaVisita }
 
     LaunchedEffect(Unit) {
         val userId = auth.currentUser?.uid
@@ -370,41 +381,117 @@ fun HeaderSection() {
                 .addOnSuccessListener { document ->
                     if (document != null && document.exists()) {
                         val nomeCompleto = document.getString("nome") ?: "Visitante"
-                        val primeiroNome = nomeCompleto.split(" ").firstOrNull() ?: "Visitante"
-                        userName = primeiroNome
+                        userName = nomeCompleto.split(" ").firstOrNull() ?: "Visitante"
                     } else {
                         userName = "Visitante"
                     }
                 }
-                .addOnFailureListener {
-                    userName = "Visitante"
-                }
+                .addOnFailureListener { userName = "Visitante" }
         } else {
             userName = "Visitante"
         }
     }
 
+    DisposableEffect(Unit) {
+        val meuId = auth.currentUser?.uid ?: ""
+        val registro = db.collection("notificacoes").addSnapshotListener { snapshot, _ ->
+            if (snapshot != null) {
+                datasNotificacoes = snapshot.documents
+                    .filter { doc ->
+                        val destino = doc.getString("destinatarioId") ?: "TODOS"
+                        destino == "TODOS" || (meuId.isNotEmpty() && destino == meuId)
+                    }
+                    .mapNotNull { it.getLong("data") }
+            }
+        }
+        onDispose { registro.remove() }
+    }
+
+    // Ao voltar para esta tela (ex: depois de abrir o sino), relê a ultima visita para zerar o contador
+    val ciclo = LocalLifecycleOwner.current
+    DisposableEffect(ciclo) {
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME) ultimaVisita = RegistroNotificacoes.ultimaVisita(context)
+        }
+        ciclo.lifecycle.addObserver(observador)
+        onDispose { ciclo.lifecycle.removeObserver(observador) }
+    }
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "HelpPet", color = primaryGreen, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Icon(
-                painter = painterResource(id = R.drawable.ic_bell),
-                contentDescription = "Notificações",
-                tint = primaryGreen,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clickable {
-                        context.startActivity(Intent(context, NotificacoesActivity::class.java))
-                    }
+            Text(
+                text = "HelpPet",
+                color = primaryGreen,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
             )
+            BotaoCabecalho(
+                descricao = "Compartilhar um pet",
+                onClick = { mostrarCompartilhar = true }
+            ) {
+                Icon(Icons.Filled.Share, contentDescription = null, tint = primaryGreen, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            BotaoCabecalho(
+                descricao = "Notificações",
+                contador = naoLidas,
+                onClick = { context.startActivity(Intent(context, NotificacoesActivity::class.java)) }
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_bell),
+                    contentDescription = null,
+                    tint = primaryGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
         Spacer(modifier = Modifier.height(24.dp))
         Text(text = "Olá, $userName!", color = textPrimary, fontSize = 30.sp, fontWeight = FontWeight.Bold)
         Text(text = "Juntos podemos ajudar\nmais pets.", color = textSecondary, fontSize = 16.sp)
+    }
+
+    if (mostrarCompartilhar) {
+        CompartilharPetSheet(animais = animais, onDismiss = { mostrarCompartilhar = false })
+    }
+}
+
+/** Botao redondo do cabecalho, com bolinha vermelha de contador opcional. */
+@Composable
+fun BotaoCabecalho(descricao: String, contador: Int = 0, onClick: () -> Unit, icone: @Composable () -> Unit) {
+    Box {
+        Surface(
+            shape = CircleShape,
+            color = Color.White,
+            shadowElevation = 2.dp,
+            modifier = Modifier
+                .size(46.dp)
+                .semantics { contentDescription = descricao }
+                .clickable { onClick() }
+        ) {
+            Box(contentAlignment = Alignment.Center) { icone() }
+        }
+        if (contador > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 4.dp, y = (-4).dp)
+                    .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp)
+                    .background(Color(0xFFC53929), CircleShape)
+                    .padding(horizontal = 5.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (contador > 9) "9+" else contador.toString(),
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
 }
 
