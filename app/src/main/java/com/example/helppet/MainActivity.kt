@@ -100,10 +100,6 @@ fun MainScreen() {
         passaCategoria && passaBusca
     }
 
-    fun abrirAba(status: StatusPet) {
-        context.startActivity(Intent(context, AnimaisActivity::class.java).putExtra("aba", status.aba))
-    }
-
     Scaffold(
         bottomBar = {
             MenuInferior(
@@ -130,23 +126,6 @@ fun MainScreen() {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Atalhos com a quantidade de pets em cada situacao
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                StatusPet.entries.forEach { status ->
-                    AtalhoStatus(
-                        status = status,
-                        quantidade = animais.count { statusDoAnimal(it) == status },
-                        modifier = Modifier.weight(1f),
-                        onClick = { abrirAba(status) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),

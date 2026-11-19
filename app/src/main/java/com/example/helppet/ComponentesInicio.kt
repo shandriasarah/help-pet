@@ -120,33 +120,6 @@ fun BarraBusca(texto: String, aoMudar: (String) -> Unit, modifier: Modifier = Mo
     )
 }
 
-/** Cartao pequeno com o numero de pets de cada situacao (abre a aba certa na tela Animais). */
-@Composable
-fun AtalhoStatus(status: StatusPet, quantidade: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = status.corFundo,
-        shape = RoundedCornerShape(16.dp),
-        modifier = modifier
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-            Text(
-                text = quantidade.toString(),
-                color = status.corTexto,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = status.atalho,
-                color = status.corTexto,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1
-            )
-        }
-    }
-}
-
 /** Card compacto para a grade de 2 colunas da tela inicial. */
 @Composable
 fun CardPetGrade(animal: Animal, modifier: Modifier = Modifier) {
