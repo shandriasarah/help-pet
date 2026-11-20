@@ -26,6 +26,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import coil.compose.AsyncImage
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +46,6 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 import java.io.File
-import kotlin.random.Random
 
 class MapaActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +80,8 @@ fun MapaScreen() {
     val db = remember { FirebaseFirestore.getInstance() }
     var animaisNoBanco by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+    // Pets do pin tocado quando ha mais de um na mesma regiao
+    var grupoSelecionado by remember { mutableStateOf<List<Animal>?>(null) }
 
 
     LaunchedEffect(Unit) {
@@ -167,10 +174,10 @@ fun MapaScreen() {
 
 
 
+                    // So os desaparecidos aparecem no mapa
                     val listaParaExibir = if (animaisNoBanco.isNotEmpty()) {
-                        animaisNoBanco.filter { animal -> statusDoAnimal(animal) != StatusPet.ADOCAO }
+                        animaisNoBanco.filter { animal -> statusDoAnimal(animal) == StatusPet.PERDIDO }
                     } else {
-
                         listOf(
                             Animal(
                                 id = "demo1",
@@ -182,52 +189,70 @@ fun MapaScreen() {
                         )
                     }
 
-                    listaParaExibir.forEach { animal ->
-                        val ponto = obterCoordenadasRecife(animal.descricao, animal.id.hashCode())
-                        val isPerdido = statusDoAnimal(animal) == StatusPet.PERDIDO
+                    // Pets da mesma regiao viram um unico pin (com a quantidade), assim nada fica um sobre o outro
+                    listaParaExibir
+                        .groupBy { animal -> regiaoDoPet(animal.descricao).first }
+                        .forEach { (_, petsDaRegiao) ->
+                            val ponto = regiaoDoPet(petsDaRegiao.first().descricao).second
 
-
-                        val circuloRegiao = Polygon(mapView).apply {
-                            points = Polygon.pointsAsCircle(ponto, 450.0)
-                            infoWindow = null
-                            if (isPerdido) {
-
-                                fillPaint.color = AndroidColor.argb(45, 197, 57, 41)
+                            val circuloRegiao = Polygon(mapView).apply {
+                                points = Polygon.pointsAsCircle(ponto, 450.0)
+                                infoWindow = null
+                                fillPaint.color = AndroidColor.argb(40, 197, 57, 41)
                                 outlinePaint.color = AndroidColor.rgb(197, 57, 41)
-                            } else {
-
-                                fillPaint.color = AndroidColor.argb(45, 46, 125, 50)
-                                outlinePaint.color = AndroidColor.rgb(46, 125, 50)
+                                outlinePaint.strokeWidth = 3f
                             }
-                            outlinePaint.strokeWidth = 3f
-                        }
-                        mapView.overlays.add(circuloRegiao)
+                            mapView.overlays.add(circuloRegiao)
 
-
-                        // Pin proprio: circulo na cor do status com uma patinha. Um toque abre o perfil do pet.
-                        val marcador = Marker(mapView).apply {
-                            position = ponto
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            icon = criarIconeMarcador(
-                                ctxMapa,
-                                if (isPerdido) AndroidColor.rgb(197, 57, 41) else AndroidColor.rgb(27, 77, 62)
-                            )
-                            infoWindow = null
-                            title = nomeDeExibicao(animal)
-                            setOnMarkerClickListener { _, _ ->
-                                if (animal.id !in listOf("demo1", "demo2", "demo3")) {
-                                    abrirDetalhesPet(context, animal)
+                            val marcador = Marker(mapView).apply {
+                                position = ponto
+                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                icon = criarIconeMarcador(ctxMapa, AndroidColor.rgb(197, 57, 41), petsDaRegiao.size)
+                                infoWindow = null
+                                title = petsDaRegiao.joinToString { nomeDeExibicao(it) }
+                                setOnMarkerClickListener { _, _ ->
+                                    val reais = petsDaRegiao.filter { it.id !in listOf("demo1", "demo2", "demo3") }
+                                    when {
+                                        reais.size == 1 -> abrirDetalhesPet(context, reais.first())
+                                        reais.size > 1 -> grupoSelecionado = reais
+                                    }
+                                    true
                                 }
-                                true
                             }
+                            mapView.overlays.add(marcador)
                         }
-                        mapView.overlays.add(marcador)
-                    }
 
                     mapView.invalidate()
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
+            grupoSelecionado?.let { pets ->
+                ModalBottomSheet(
+                    onDismissRequest = { grupoSelecionado = null },
+                    containerColor = Color.White
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
+                        Text(
+                            "${pets.size} pets desaparecidos nesta região",
+                            color = Color(0xFF1C2723),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Toque em um pet para ver o perfil.", color = Color(0xFF757575), fontSize = 13.sp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            pets.forEach { pet ->
+                                LinhaPetMapa(pet) {
+                                    grupoSelecionado = null
+                                    abrirDetalhesPet(context, pet)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             Surface(
                 color = Color.White,
@@ -244,14 +269,10 @@ fun MapaScreen() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(10.dp).background(Color(0xFFC53929), CircleShape))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Desaparecido", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C2723))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Box(modifier = Modifier.size(10.dp).background(Color(0xFF1B4D3E), CircleShape))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Encontrado", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C2723))
+                        Text("Pets desaparecidos", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1C2723))
                     }
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text("Toque no pin para ver o perfil do pet", fontSize = 12.sp, color = Color(0xFF757575))
+                    Text("Toque no pin para ver os pets da região", fontSize = 12.sp, color = Color(0xFF757575), textAlign = TextAlign.Center)
                 }
             }
         }
@@ -259,7 +280,7 @@ fun MapaScreen() {
 }
 
 /** Desenha o pin do mapa: circulo colorido com borda branca, patinha branca e ponta embaixo. */
-private fun criarIconeMarcador(context: Context, cor: Int): BitmapDrawable {
+private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1): BitmapDrawable {
     val d = context.resources.displayMetrics.density
     val largura = (56 * d).toInt()
     val altura = (72 * d).toInt()
@@ -291,6 +312,18 @@ private fun criarIconeMarcador(context: Context, cor: Int): BitmapDrawable {
     tinta.color = cor
     canvas.drawCircle(cx, cy, raio - 3 * d, tinta)
 
+    // Varios pets na mesma regiao: mostra o numero no lugar da patinha
+    if (quantidade > 1) {
+        val texto = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = AndroidColor.WHITE
+            textSize = raio * 0.95f
+            textAlign = Paint.Align.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+        canvas.drawText(if (quantidade > 99) "99+" else quantidade.toString(), cx, cy - (texto.descent() + texto.ascent()) / 2, texto)
+        return BitmapDrawable(context.resources, bitmap)
+    }
+
     // Patinha branca no centro
     ContextCompat.getDrawable(context, R.drawable.ic_nav_pets)?.mutate()?.let { pata ->
         pata.setTint(AndroidColor.WHITE)
@@ -303,23 +336,64 @@ private fun criarIconeMarcador(context: Context, cor: Int): BitmapDrawable {
 }
 
 
-private fun obterCoordenadasRecife(descricao: String, seed: Int): GeoPoint {
+/** Regiao aproximada do pet pelo bairro citado na descricao: nome da regiao e ponto no mapa. */
+private fun regiaoDoPet(descricao: String): Pair<String, GeoPoint> {
     val texto = descricao.lowercase()
-    val base = when {
-        texto.contains("boa viagem") || texto.contains("pina") -> GeoPoint(-8.1180, -34.8970)
-        texto.contains("coelhos") || texto.contains("ilha do leite") -> GeoPoint(-8.0625, -34.8850)
-        texto.contains("boa vista") || texto.contains("conde") || texto.contains("derby") -> GeoPoint(-8.0500, -34.8800)
-        texto.contains("marco zero") || texto.contains("recife antigo") -> GeoPoint(-8.0631, -34.8711)
-        texto.contains("graças") || texto.contains("espinheiro") || texto.contains("aflitos") -> GeoPoint(-8.0440, -34.8970)
-        texto.contains("casa amarela") || texto.contains("parnamirim") || texto.contains("jaqueira") -> GeoPoint(-8.0300, -34.9120)
-        texto.contains("várzea") || texto.contains("ufpe") || texto.contains("caxangá") -> GeoPoint(-8.0500, -34.9500)
-        texto.contains("afogados") || texto.contains("san martin") || texto.contains("bongi") -> GeoPoint(-8.0750, -34.9150)
-        texto.contains("imbiribeira") || texto.contains("ipsep") -> GeoPoint(-8.1050, -34.9150)
-        texto.contains("olinda") -> GeoPoint(-8.0100, -34.8550)
-        else -> GeoPoint(-8.0578, -34.8829)
+    return when {
+        texto.contains("boa viagem") || texto.contains("pina") -> "Boa Viagem" to GeoPoint(-8.1180, -34.8970)
+        texto.contains("coelhos") || texto.contains("ilha do leite") -> "Coelhos" to GeoPoint(-8.0625, -34.8850)
+        texto.contains("boa vista") || texto.contains("conde") || texto.contains("derby") -> "Boa Vista" to GeoPoint(-8.0500, -34.8800)
+        texto.contains("marco zero") || texto.contains("recife antigo") -> "Recife Antigo" to GeoPoint(-8.0631, -34.8711)
+        texto.contains("graças") || texto.contains("espinheiro") || texto.contains("aflitos") -> "Graças" to GeoPoint(-8.0440, -34.8970)
+        texto.contains("casa amarela") || texto.contains("parnamirim") || texto.contains("jaqueira") -> "Casa Amarela" to GeoPoint(-8.0300, -34.9120)
+        texto.contains("várzea") || texto.contains("ufpe") || texto.contains("caxangá") -> "Várzea" to GeoPoint(-8.0500, -34.9500)
+        texto.contains("afogados") || texto.contains("san martin") || texto.contains("bongi") -> "Afogados" to GeoPoint(-8.0750, -34.9150)
+        texto.contains("imbiribeira") || texto.contains("ipsep") -> "Imbiribeira" to GeoPoint(-8.1050, -34.9150)
+        texto.contains("olinda") -> "Olinda" to GeoPoint(-8.0100, -34.8550)
+        else -> "Centro" to GeoPoint(-8.0578, -34.8829)
     }
-    val random = Random(seed)
-    val latOffset = (random.nextDouble() - 0.5) * 0.003
-    val lonOffset = (random.nextDouble() - 0.5) * 0.003
-    return GeoPoint(base.latitude + latOffset, base.longitude + lonOffset)
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LinhaPetMapa(pet: Animal, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = Color(0xFFF7F8F8),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFCE8E6)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (pet.fotoUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = pet.fotoUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(Icons.Filled.Pets, contentDescription = null, tint = Color(0x80C53929), modifier = Modifier.size(28.dp))
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(nomeDeExibicao(pet), color = Color(0xFF1C2723), fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    listOf(pet.especie, localDoAnimal(pet)).filter { it.isNotBlank() }.joinToString(" • "),
+                    color = Color(0xFF757575),
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color(0xFFBDBDBD))
+        }
+    }
+}
+
