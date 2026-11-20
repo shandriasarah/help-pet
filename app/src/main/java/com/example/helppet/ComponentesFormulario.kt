@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
@@ -330,4 +331,122 @@ fun SeletorSegmentado(opcoes: List<Pair<String, String>>, selecionado: String, o
             }
         }
     }
+}
+
+/** Formata so os digitos de um telefone: "81999998888" -> "(81) 99999-8888". */
+fun formatarTelefone(digitos: String): String = MascaraTelefone.formatar(digitos).first
+
+/** Mascara de telefone brasileiro: (DD) NNNN-NNNN ou (DD) NNNNN-NNNN, sem mudar o valor guardado. */
+object MascaraTelefone : androidx.compose.ui.text.input.VisualTransformation {
+    /** Devolve o texto formatado e, para cada posicao do original, a posicao no formatado. */
+    fun formatar(digitos: String): Pair<String, IntArray> {
+        val n = digitos.length
+        val corte = if (n == 11) 5 else 4
+        val saida = StringBuilder()
+        val origParaForm = IntArray(n + 1)
+        for (i in 0 until n) {
+            if (i == 0) saida.append('(')
+            if (i == 2) saida.append(") ")
+            if (i == 2 + corte) saida.append('-')
+            origParaForm[i] = saida.length
+            saida.append(digitos[i])
+        }
+        origParaForm[n] = saida.length
+        return saida.toString() to origParaForm
+    }
+
+    override fun filter(text: androidx.compose.ui.text.AnnotatedString): androidx.compose.ui.text.input.TransformedText {
+        val (formatado, origParaForm) = formatar(text.text)
+        val mapa = object : androidx.compose.ui.text.input.OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int = origParaForm[offset.coerceIn(0, text.length)]
+            override fun transformedToOriginal(offset: Int): Int {
+                var i = 0
+                while (i < text.length && origParaForm[i + 1] <= offset) i++
+                return i
+            }
+        }
+        return androidx.compose.ui.text.input.TransformedText(androidx.compose.ui.text.AnnotatedString(formatado), mapa)
+    }
+}
+
+/**
+ * Campo de WhatsApp: prefixo fixo do Brasil (+55), mascara (81) 99999-9999,
+ * confirmacao verde quando o numero esta completo e preenchimento com o telefone do cadastro.
+ */
+@Composable
+fun CampoWhatsApp(
+    valor: String,
+    aoMudar: (String) -> Unit,
+    corDestaque: Color,
+    preencherDoPerfil: Boolean = true
+) {
+    val aoMudarAtual by rememberUpdatedState(aoMudar)
+    val valorAtual by rememberUpdatedState(valor)
+
+    // Preenche com o telefone que a pessoa informou no cadastro (ela pode trocar)
+    LaunchedEffect(Unit) {
+        if (!preencherDoPerfil || valorAtual.isNotEmpty()) return@LaunchedEffect
+        val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            .collection("usuarios").document(uid).get()
+            .addOnSuccessListener { doc ->
+                var digitos = doc.getString("telefone").orEmpty().filter { it.isDigit() }
+                if (digitos.length == 13 && digitos.startsWith("55")) digitos = digitos.drop(2)
+                if (valorAtual.isEmpty() && digitos.length in 10..11) aoMudarAtual(digitos)
+            }
+    }
+
+    val completo = valor.length in 10..11
+    val incompleto = valor.isNotEmpty() && !completo
+
+    OutlinedTextField(
+        value = valor,
+        onValueChange = { novo -> aoMudar(novo.filter { it.isDigit() }.take(11)) },
+        placeholder = { Text("(81) 99999-9999", color = Color(0xFF9E9E9E)) },
+        leadingIcon = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 14.dp, end = 4.dp)
+            ) {
+                Text("🇧🇷", fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("+55", color = Color(0xFF1C2723), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.width(12.dp))
+                VerticalDivider(modifier = Modifier.height(24.dp), color = Color(0xFFE0E0E0))
+            }
+        },
+        trailingIcon = if (completo) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "Número completo",
+                    tint = Color(0xFF25A35A)
+                )
+            }
+        } else null,
+        supportingText = {
+            Text(
+                when {
+                    incompleto -> "Digite o DDD e o número completo"
+                    completo -> "As pessoas vão falar com você por este WhatsApp"
+                    else -> "Com DDD. Ex: (81) 99999-9999"
+                },
+                color = if (incompleto) Color(0xFFB06000) else Color(0xFF8A938F),
+                fontSize = 12.sp
+            )
+        },
+        visualTransformation = MascaraTelefone,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone),
+        singleLine = true,
+        textStyle = TextStyle(fontSize = 16.sp, color = Color(0xFF1C2723), fontWeight = FontWeight.Medium),
+        shape = RoundedCornerShape(14.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = corDestaque,
+            unfocusedBorderColor = if (completo) Color(0xFFCFE7D8) else Color.Transparent,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            cursorColor = corDestaque
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
 }
