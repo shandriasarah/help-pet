@@ -94,7 +94,7 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
         if (userId != null) {
             db.collection("usuarios").document(userId).get()
                 .addOnSuccessListener { doc ->
-                    userName = doc.getString("nome") ?: "Usuário"
+                    userName = nomeDoUsuario(doc.getString("nome"))
                     savedAlertaEspecie = doc.getString("alertaEspecie") ?: "Qualquer"
                     savedAlertaRaio = doc.getString("alertaRaio") ?: "50 km"
                 }

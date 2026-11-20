@@ -271,3 +271,29 @@ fun EstadoVazio(titulo: String, mensagem: String, textoBotao: String?, onBotao: 
         }
     }
 }
+
+/**
+ * Nome para mostrar ao usuario: o do cadastro; se nao houver, o da conta Google/Apple;
+ * se nao houver, a parte do e-mail antes do "@".
+ */
+fun nomeDoUsuario(nomeCadastro: String?): String {
+    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return "Visitante"
+    return nomeCadastro?.takeIf { it.isNotBlank() }
+        ?: user.displayName?.takeIf { it.isNotBlank() }
+        ?: user.email?.substringBefore("@")?.takeIf { it.isNotBlank() }
+        ?: "Usuário"
+}
+
+/** Cria o documento em "usuarios" para quem ainda nao tem (ex: entrou com Google ou Apple). */
+fun criarPerfilSeFaltar() {
+    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
+    val ref = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("usuarios").document(user.uid)
+    ref.get().addOnSuccessListener { doc ->
+        if (!doc.exists() || doc.getString("nome").isNullOrBlank()) {
+            ref.set(
+                mapOf("nome" to nomeDoUsuario(null), "email" to (user.email ?: "")),
+                com.google.firebase.firestore.SetOptions.merge()
+            )
+        }
+    }
+}

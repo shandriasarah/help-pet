@@ -377,16 +377,15 @@ fun HeaderSection(animais: List<Animal> = emptyList()) {
     LaunchedEffect(Unit) {
         val userId = auth.currentUser?.uid
         if (userId != null) {
+            // Mostra logo o nome da conta e depois troca pelo nome do cadastro, se houver
+            userName = nomeDoUsuario(null).trim().split(" ").first()
             db.collection("usuarios").document(userId).get()
                 .addOnSuccessListener { document ->
-                    if (document != null && document.exists()) {
-                        val nomeCompleto = document.getString("nome") ?: "Visitante"
-                        userName = nomeCompleto.split(" ").firstOrNull() ?: "Visitante"
-                    } else {
-                        userName = "Visitante"
+                    userName = nomeDoUsuario(document?.getString("nome")).trim().split(" ").first()
+                    if (document == null || !document.exists() || document.getString("nome").isNullOrBlank()) {
+                        criarPerfilSeFaltar()
                     }
                 }
-                .addOnFailureListener { userName = "Visitante" }
         } else {
             userName = "Visitante"
         }
