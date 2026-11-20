@@ -84,6 +84,45 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
     val colorAccentRed = Color(0xFFC53929)
 
     var showAlertaDialog by remember { mutableStateOf(false) }
+    var textoLegalAberto by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var mostrarExcluirDialog by remember { mutableStateOf(false) }
+    var excluindoConta by remember { mutableStateOf(false) }
+
+    fun excluirConta() {
+        val user = auth.currentUser ?: return
+        val ultimoLogin = user.metadata?.lastSignInTimestamp ?: 0L
+        if (System.currentTimeMillis() - ultimoLogin > 5 * 60 * 1000L) {
+            Toast.makeText(context, "Por segurança, saia e entre de novo na conta antes de excluí-la.", Toast.LENGTH_LONG).show()
+            return
+        }
+        excluindoConta = true
+        db.collection("animais").whereEqualTo("donoId", user.uid).get()
+            .addOnSuccessListener { snapshot ->
+                val lote = db.batch()
+                snapshot.documents.forEach { lote.delete(it.reference) }
+                lote.delete(db.collection("usuarios").document(user.uid))
+                lote.commit()
+                    .addOnSuccessListener {
+                        user.delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Conta excluída. Obrigado por ajudar os pets!", Toast.LENGTH_LONG).show()
+                                onLogout()
+                            }
+                            .addOnFailureListener { e ->
+                                excluindoConta = false
+                                Toast.makeText(context, mensagemErroAuth(e), Toast.LENGTH_LONG).show()
+                            }
+                    }
+                    .addOnFailureListener {
+                        excluindoConta = false
+                        Toast.makeText(context, "Não foi possível apagar seus dados. Tente novamente.", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .addOnFailureListener {
+                excluindoConta = false
+                Toast.makeText(context, "Sem conexão. Verifique sua internet e tente de novo.", Toast.LENGTH_LONG).show()
+            }
+    }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
 
@@ -251,8 +290,8 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                     fontSize = 16.sp,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable { textoLegalAberto = TEXTO_PRIVACIDADE }
                         .padding(vertical = 16.dp)
-                        .clickable { }
                 )
                 HorizontalDivider(color = Color(0xFFF0F0F0))
                 Text(
@@ -261,8 +300,8 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
                     fontSize = 16.sp,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable { textoLegalAberto = TEXTO_TERMOS }
                         .padding(vertical = 16.dp)
-                        .clickable { }
                 )
             }
         }
@@ -285,18 +324,60 @@ fun PerfilScreen(onBackClick: () -> Unit, onLogout: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
-                onClick = { },
+                onClick = { mostrarExcluirDialog = true },
+                enabled = !excluindoConta,
                 border = BorderStroke(1.dp, colorAccentRed),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text("Excluir minha conta", color = colorAccentRed, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (excluindoConta) {
+                    CircularProgressIndicator(color = colorAccentRed, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Excluir minha conta", color = colorAccentRed, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
+    }
+
+    textoLegalAberto?.let { (titulo, corpo) ->
+        AlertDialog(
+            onDismissRequest = { textoLegalAberto = null },
+            containerColor = Color.White,
+            title = { Text(titulo, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    Text(corpo, fontSize = 14.sp, lineHeight = 20.sp, color = Color(0xFF444444))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { textoLegalAberto = null }) {
+                    Text("Entendi", color = primaryGreen, fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    if (mostrarExcluirDialog) {
+        AlertDialog(
+            onDismissRequest = { mostrarExcluirDialog = false },
+            containerColor = Color.White,
+            title = { Text("Excluir sua conta?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("Isso apaga sua conta e todos os seus anúncios (${meusAnimais.size}). Essa ação não pode ser desfeita.")
+            },
+            confirmButton = {
+                TextButton(onClick = { mostrarExcluirDialog = false; excluirConta() }) {
+                    Text("Excluir", color = colorAccentRed, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarExcluirDialog = false }) { Text("Cancelar", color = Color.Gray) }
+            }
+        )
     }
 
 
@@ -549,3 +630,24 @@ fun AlertaRegiaoSheet(
         }
     }
 }
+
+private val TEXTO_PRIVACIDADE = "Política de Privacidade" to """
+    O HelpPet guarda apenas os dados necessários para ajudar pets a encontrarem um lar ou voltarem para casa.
+
+    • Dados da conta: nome, e-mail e WhatsApp, usados para identificar você e permitir que outras pessoas entrem em contato sobre um pet.
+    • Anúncios: fotos, descrição e local aproximado dos pets que você cadastra ficam visíveis para todos os usuários do app.
+    • Notificações: alertas gerais são vistos por todos; avisos sobre o seu pet são enviados só para você.
+
+    Não vendemos nem compartilhamos seus dados com terceiros. Você pode editar ou apagar seus anúncios a qualquer momento e excluir sua conta em Perfil > Excluir minha conta, o que apaga também todos os seus anúncios.
+""".trimIndent()
+
+private val TEXTO_TERMOS = "Termos de Uso" to """
+    Ao usar o HelpPet, você concorda em:
+
+    • Cadastrar apenas informações verdadeiras sobre os animais e sobre você.
+    • Não usar o app para vender animais nem para qualquer fim comercial.
+    • Respeitar as outras pessoas nos contatos feitos pelo WhatsApp.
+    • Atualizar ou remover o anúncio quando o pet for encontrado ou adotado.
+
+    O HelpPet conecta pessoas, mas não se responsabiliza pelas combinações e encontros entre usuários. Anúncios falsos ou ofensivos podem ser removidos.
+""".trimIndent()
