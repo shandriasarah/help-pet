@@ -134,7 +134,7 @@ fun PerdiAnimalScreen(onBackClick: () -> Unit) {
         OutlinedTextField(value = localVisto, onValueChange = { localVisto = it }, placeholder = { Text("Bairro, Rua, Referência...", color = textHint) }, colors = customTextFieldColors(accentRed), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
 
         LabelWithStar("Seu WhatsApp ", isMandatory = true)
-        OutlinedTextField(value = telefone, onValueChange = { newValue -> val digits = newValue.filter { it.isDigit() }; if (digits.length <= 11) telefone = digits }, placeholder = { Text("DDD + Número", color = textHint) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), colors = customTextFieldColors(accentRed), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(60.dp))
+        CampoWhatsApp(valor = telefone, aoMudar = { telefone = it }, corDestaque = accentRed)
 
         Spacer(modifier = Modifier.height(40.dp))
 

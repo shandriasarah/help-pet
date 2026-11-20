@@ -221,18 +221,7 @@ fun QueroAdotarScreen(onBackClick: () -> Unit) {
             ) { tipoMoradia = it }
 
             LabelWithStar("Seu WhatsApp ", isMandatory = true)
-            OutlinedTextField(
-                value = telefone,
-                onValueChange = { newValue ->
-                    val digits = newValue.filter { it.isDigit() }
-                    if (digits.length <= 11) telefone = digits
-                },
-                placeholder = { Text("DDD + Número", color = textHint) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                colors = customTextFieldColors(),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(60.dp)
-            )
+            CampoWhatsApp(valor = telefone, aoMudar = { telefone = it }, corDestaque = primaryGreen)
 
             LabelWithStar("Por que você quer adotar? ", isMandatory = false)
             OutlinedTextField(
