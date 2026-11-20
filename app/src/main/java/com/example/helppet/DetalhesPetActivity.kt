@@ -79,8 +79,9 @@ fun DetalhesPetScreen(
     val primaryGreen = colorResource(id = R.color.primary_green)
     val textDark = Color(0xFF1C2723)
 
-    val isAdocao = nome.contains("(Para Adoção)", ignoreCase = true)
-    val isPerdido = nome.contains("(Perdido)", ignoreCase = true) || nome.contains("(Desaparecido)", ignoreCase = true)
+    val statusPet = statusDoAnimal(Animal(nome = nome, descricao = descricao))
+    val isAdocao = statusPet == StatusPet.ADOCAO
+    val isPerdido = statusPet == StatusPet.PERDIDO
     val nomeLimpoTemp = nome
         .replace(" (Para Adoção)", "", ignoreCase = true)
         .replace(" (Perdido)", "", ignoreCase = true)

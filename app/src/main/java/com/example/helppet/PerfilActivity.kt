@@ -376,8 +376,8 @@ fun MeuAnimalCard(animal: Animal, primaryGreen: Color, onEdit: () -> Unit, onDel
     }
 
     val textoTag = when {
-        animal.nome.contains("Para Adoção", ignoreCase = true) -> "Para Adoção"
-        animal.nome.contains("Perdido", ignoreCase = true) || animal.nome.contains("Desaparecido", ignoreCase = true) -> "Desaparecido"
+        statusDoAnimal(animal) == StatusPet.ADOCAO -> "Para Adoção"
+        statusDoAnimal(animal) == StatusPet.PERDIDO -> "Desaparecido"
         else -> "Encontrado"
     }
 
