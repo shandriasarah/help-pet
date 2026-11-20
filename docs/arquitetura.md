@@ -73,36 +73,32 @@ Todo o código fica em `app/src/main/java/com/example/helppet/`.
 
 ## Navegação
 
+### Entre as telas principais
+
 ```mermaid
-flowchart TD
-    Login --> Cadastro
+flowchart LR
+    Login --> Cadastro --> Inicio[Início]
     Login --> Inicio
-    Cadastro --> Inicio
-
-    Inicio <--> Animais
-    Inicio <--> Mapa
-    Inicio <--> Perfil
-    Animais <--> Mapa
-    Animais <--> Perfil
-    Mapa <--> Perfil
-
-    Inicio --> Notificacoes
+    Inicio --- Menu{{Menu inferior}}
+    Menu --- Animais
+    Menu --- Mapa
+    Menu --- Perfil
+    Inicio --> Notificacoes[Notificações]
     Inicio --> Detalhes[Perfil do pet]
     Animais --> Detalhes
     Mapa --> Detalhes
-
-    Inicio -- botão + --> Menu[Menu Adicionar]
-    Animais -- botão + --> Menu
-    Menu --> Perdi[Perdi um animal]
-    Menu --> Encontrei[Encontrei um animal]
-    Menu --> Adocao[Colocar para adoção]
-    Menu --> QueroAdotar[Quero adotar]
-    Perdi --> Publicado[Tela de sucesso]
-    Encontrei --> Publicado
-    Adocao --> Publicado
-
     Perfil --> Editar[Editar anúncio]
     Perfil -- sair / excluir conta --> Login
+```
+
+### A partir do botão "+"
+
+```mermaid
+flowchart LR
+    Mais[Botão +] --> Perdi[Perdi um animal] --> Sucesso[Tela de sucesso]
+    Mais --> Encontrei[Encontrei um animal] --> Sucesso
+    Mais --> Adocao[Colocar para adoção] --> Sucesso
+    Mais --> QueroAdotar[Quero adotar] --> Sugestoes[Pets sugeridos]
 ```
 
 Início, Animais, Mapa e Perfil são acessados pelo **menu inferior**. As telas são reutilizadas quando já estão abertas, para não acumular telas repetidas.
