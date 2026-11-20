@@ -43,11 +43,19 @@ enum class StatusPet(val rotulo: String, val aba: String, val atalho: String, va
     ENCONTRADO("Encontrado", "Achados", "Achados", Color(0xFFE6F4EA), Color(0xFF1B4D3E))
 }
 
-fun statusDoAnimal(animal: Animal): StatusPet = when {
-    animal.nome.contains("Perdido", ignoreCase = true) ||
-        animal.nome.contains("Desaparecido", ignoreCase = true) -> StatusPet.PERDIDO
-    animal.nome.contains("Para Adoção", ignoreCase = true) -> StatusPet.ADOCAO
-    else -> StatusPet.ENCONTRADO
+fun statusDoAnimal(animal: Animal): StatusPet {
+    val nome = animal.nome
+    val descricao = animal.descricao.trim()
+    return when {
+        nome.contains("Perdido", ignoreCase = true) || nome.contains("Desaparecido", ignoreCase = true) -> StatusPet.PERDIDO
+        nome.contains("Para Adoção", ignoreCase = true) -> StatusPet.ADOCAO
+        nome.contains("Encontrado", ignoreCase = true) || nome.contains("Está comigo", ignoreCase = true) ||
+            nome.contains("Avistei na rua", ignoreCase = true) -> StatusPet.ENCONTRADO
+        // Anuncios sem a etiqueta no nome: usa o texto que cada formulario grava no inicio da descricao
+        descricao.startsWith("Visto em:", ignoreCase = true) -> StatusPet.PERDIDO
+        descricao.startsWith("Saúde:", ignoreCase = true) -> StatusPet.ADOCAO
+        else -> StatusPet.ENCONTRADO
+    }
 }
 
 fun nomeDeExibicao(animal: Animal): String {

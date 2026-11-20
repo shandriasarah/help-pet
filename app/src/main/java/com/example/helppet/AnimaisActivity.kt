@@ -129,11 +129,13 @@ fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit, abaInicial: 
                             .clickable { tabSelecionada = aba },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val quantidade = listaAnimais.count { statusDoAnimal(it).aba == aba }
                         Text(
-                            text = aba,
+                            text = if (isLoading) aba else "$aba ($quantidade)",
                             color = if (tabSelecionada == aba) Color(0xFF2E5A4A) else Color(0xFF9E9E9E),
                             fontWeight = if (tabSelecionada == aba) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
+                            maxLines = 1,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
 
@@ -153,17 +155,7 @@ fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit, abaInicial: 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val listaFiltrada = listaAnimais.filter { animal ->
-                val isPerdido = animal.nome.contains("Perdido", ignoreCase = true) || animal.nome.contains("Desaparecido", ignoreCase = true)
-                val isAdocao = animal.nome.contains("Para Adoção", ignoreCase = true)
-
-                when (tabSelecionada) {
-                    "Desaparecidos" -> isPerdido
-                    "Achados" -> animal.nome.contains("Encontrado", ignoreCase = true) || animal.nome.contains("Está comigo", ignoreCase = true) || animal.nome.contains("Avistei na rua", ignoreCase = true)
-                    "Adoção" -> isAdocao
-                    else -> true
-                }
-            }
+            val listaFiltrada = listaAnimais.filter { animal -> statusDoAnimal(animal).aba == tabSelecionada }
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -171,7 +163,16 @@ fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit, abaInicial: 
                 }
             } else if (listaFiltrada.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Nenhum pet encontrado nesta categoria.", color = Color(0xFF9E9E9E))
+                    EstadoVazio(
+                        titulo = when (tabSelecionada) {
+                            "Desaparecidos" -> "Nenhum pet desaparecido"
+                            "Achados" -> "Nenhum pet achado"
+                            else -> "Nenhum pet para adoção"
+                        },
+                        mensagem = if (tabSelecionada == "Desaparecidos") "Que bom! Nenhum pet está sumido agora." else "Ainda não há pets nesta categoria.",
+                        textoBotao = "Cadastrar um pet",
+                        onBotao = { showAddMenu = true }
+                    )
                 }
             } else {
                 LazyColumn(
@@ -195,8 +196,9 @@ fun AnimaisScreen(onBackClick: () -> Unit, onHomeClick: () -> Unit, abaInicial: 
 fun AnimalItemListCardReal(animal: Animal) {
     val context = LocalContext.current
 
-    val isPerdido = animal.nome.contains("Perdido", ignoreCase = true) || animal.nome.contains("Desaparecido", ignoreCase = true)
-    val isAdocao = animal.nome.contains("Para Adoção", ignoreCase = true)
+    val status = statusDoAnimal(animal)
+    val isPerdido = status == StatusPet.PERDIDO
+    val isAdocao = status == StatusPet.ADOCAO
 
     val (corTag, textoTag) = when {
         isPerdido -> Color(0xFFD32F2F) to "Desaparecido"

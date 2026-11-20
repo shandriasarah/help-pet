@@ -89,7 +89,8 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
             .addOnSuccessListener { snapshot ->
                 val perdidos = snapshot.documents.mapNotNull { doc ->
                     val nome = doc.getString("nome") ?: ""
-                    if (nome.contains("Perdido", ignoreCase = true) || nome.contains("Desaparecido", ignoreCase = true)) {
+                    val ehPerdido = statusDoAnimal(Animal(nome = nome, descricao = doc.getString("descricao") ?: "")) == StatusPet.PERDIDO
+                    if (ehPerdido) {
                         Animal(
                             id = doc.id,
                             nome = nome,

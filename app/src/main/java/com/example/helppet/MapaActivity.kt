@@ -184,8 +184,7 @@ fun MapaScreen() {
 
                     listaParaExibir.forEach { animal ->
                         val ponto = obterCoordenadasRecife(animal.descricao, animal.id.hashCode())
-                        val isPerdido = animal.nome.contains("Perdido", ignoreCase = true) ||
-                                animal.nome.contains("Desaparecido", ignoreCase = true)
+                        val isPerdido = statusDoAnimal(animal) == StatusPet.PERDIDO
 
 
                         val circuloRegiao = Polygon(mapView).apply {
