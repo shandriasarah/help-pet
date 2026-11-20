@@ -50,12 +50,10 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 
-/** Proporcao da foto do pet (largura / altura) usada no quadro e no recorte enviado. */
 const val PROPORCAO_FOTO = 4f / 3f
 
 private const val IMGBB_API_KEY = "f6731151c6f72e4bc18b9ccfed8f032a"
 
-/** Le a orientacao gravada pela camera (fotos de celular costumam vir "deitadas"). */
 private fun rotacaoExif(context: Context, uri: Uri): Int = try {
     context.contentResolver.openInputStream(uri)?.use { entrada ->
         when (ExifInterface(entrada).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
@@ -69,7 +67,6 @@ private fun rotacaoExif(context: Context, uri: Uri): Int = try {
     0
 }
 
-/** Largura / altura da foto, ja considerando a rotacao da camera. */
 private fun proporcaoDaFoto(context: Context, uri: Uri): Float? = try {
     val opcoes = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opcoes) }
@@ -81,13 +78,8 @@ private fun proporcaoDaFoto(context: Context, uri: Uri): Float? = try {
     null
 }
 
-/**
- * Recorta a foto no enquadramento escolhido (vies de -1 a 1 em cada eixo),
- * reduz o tamanho e envia para o ImgBB. Devolve o link da imagem ou null.
- */
 suspend fun uploadFotoRecortada(context: Context, uri: Uri, vies: Offset): String? = withContext(Dispatchers.IO) {
     try {
-        // 1. Le a foto ja reduzida (evita estourar a memoria com fotos de 12+ megapixels)
         val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, limites) }
         var amostra = 1
@@ -96,14 +88,12 @@ suspend fun uploadFotoRecortada(context: Context, uri: Uri, vies: Offset): Strin
         var foto = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opcoes) }
             ?: return@withContext null
 
-        // 2. Corrige a rotacao da camera
         val rotacao = rotacaoExif(context, uri)
         if (rotacao != 0) {
             val matriz = Matrix().apply { postRotate(rotacao.toFloat()) }
             foto = Bitmap.createBitmap(foto, 0, 0, foto.width, foto.height, matriz, true)
         }
 
-        // 3. Recorta no formato 4:3 usando a posicao que a pessoa arrastou
         val proporcao = foto.width.toFloat() / foto.height
         val (larguraCorte, alturaCorte) = if (proporcao > PROPORCAO_FOTO) {
             (foto.height * PROPORCAO_FOTO).toInt() to foto.height
@@ -114,7 +104,6 @@ suspend fun uploadFotoRecortada(context: Context, uri: Uri, vies: Offset): Strin
         val y = ((foto.height - alturaCorte) * (vies.y + 1f) / 2f).toInt().coerceIn(0, foto.height - alturaCorte)
         var recorte = Bitmap.createBitmap(foto, x, y, larguraCorte, alturaCorte)
 
-        // 4. Limita a 1280px de largura e comprime
         if (recorte.width > 1280) {
             recorte = Bitmap.createScaledBitmap(recorte, 1280, (1280 / PROPORCAO_FOTO).toInt(), true)
         }
@@ -122,7 +111,6 @@ suspend fun uploadFotoRecortada(context: Context, uri: Uri, vies: Offset): Strin
         recorte.compress(Bitmap.CompressFormat.JPEG, 85, saida)
         val base64 = Base64.encodeToString(saida.toByteArray(), Base64.DEFAULT)
 
-        // 5. Envia para o ImgBB
         val corpo = FormBody.Builder().add("image", base64).build()
         val pedido = Request.Builder().url("https://api.imgbb.com/1/upload?key=$IMGBB_API_KEY").post(corpo).build()
         OkHttpClient().newCall(pedido).execute().use { resposta ->
@@ -135,10 +123,6 @@ suspend fun uploadFotoRecortada(context: Context, uri: Uri, vies: Offset): Strin
     }
 }
 
-/**
- * Quadro da foto do pet. Sem foto: area tracejada para escolher.
- * Com foto: mostra no formato 4:3 e a pessoa arrasta para cima/baixo (ou para os lados) para enquadrar.
- */
 @Composable
 fun CaixaFotoAjustavel(
     fotoUri: Uri?,
@@ -192,7 +176,6 @@ fun CaixaFotoAjustavel(
             val larguraPx = constraints.maxWidth.toFloat()
             val alturaPx = constraints.maxHeight.toFloat()
             val r = proporcaoImagem
-            // Quanto da foto fica "sobrando" fora do quadro (e o que da para arrastar)
             val sobraX = if (r != null && r > PROPORCAO_FOTO) alturaPx * r - larguraPx else 0f
             val sobraY = if (r != null && r < PROPORCAO_FOTO) larguraPx / r - alturaPx else 0f
 
@@ -238,7 +221,6 @@ fun CaixaFotoAjustavel(
     }
 }
 
-/** Seletor de espécie: Cachorro e Gato como botoes e uma caixa para escrever outra espécie. */
 @Composable
 fun SeletorEspecie(especie: String, aoMudar: (String) -> Unit, corDestaque: Color) {
     val ehOutra = especie.isNotEmpty() && especie != "Cachorro" && especie != "Gato"
@@ -250,7 +232,6 @@ fun SeletorEspecie(especie: String, aoMudar: (String) -> Unit, corDestaque: Colo
         PilulaOpcao("Cachorro", especie == "Cachorro", corDestaque) { aoMudar("Cachorro") }
         PilulaOpcao("Gato", especie == "Gato", corDestaque) { aoMudar("Gato") }
 
-        // Caixa de texto no mesmo formato dos botoes
         BasicTextField(
             value = if (ehOutra) especie else "",
             onValueChange = { aoMudar(it) },
@@ -299,7 +280,6 @@ fun PilulaOpcao(texto: String, selecionado: Boolean, corDestaque: Color, modifie
     }
 }
 
-/** Escolha entre duas ou mais opcoes num unico trilho, com a opcao ativa em destaque (visual "segmentado"). */
 @Composable
 fun SeletorSegmentado(opcoes: List<Pair<String, String>>, selecionado: String, onSelecionar: (String) -> Unit) {
     val primaryGreen = colorResource(id = R.color.primary_green)
@@ -333,12 +313,9 @@ fun SeletorSegmentado(opcoes: List<Pair<String, String>>, selecionado: String, o
     }
 }
 
-/** Formata so os digitos de um telefone: "81999998888" -> "(81) 99999-8888". */
 fun formatarTelefone(digitos: String): String = MascaraTelefone.formatar(digitos).first
 
-/** Mascara de telefone brasileiro: (DD) NNNN-NNNN ou (DD) NNNNN-NNNN, sem mudar o valor guardado. */
 object MascaraTelefone : androidx.compose.ui.text.input.VisualTransformation {
-    /** Devolve o texto formatado e, para cada posicao do original, a posicao no formatado. */
     fun formatar(digitos: String): Pair<String, IntArray> {
         val n = digitos.length
         val corte = if (n == 11) 5 else 4
@@ -369,10 +346,6 @@ object MascaraTelefone : androidx.compose.ui.text.input.VisualTransformation {
     }
 }
 
-/**
- * Campo de WhatsApp: prefixo fixo do Brasil (+55), mascara (81) 99999-9999,
- * confirmacao verde quando o numero esta completo e preenchimento com o telefone do cadastro.
- */
 @Composable
 fun CampoWhatsApp(
     valor: String,
@@ -383,7 +356,6 @@ fun CampoWhatsApp(
     val aoMudarAtual by rememberUpdatedState(aoMudar)
     val valorAtual by rememberUpdatedState(valor)
 
-    // Preenche com o telefone que a pessoa informou no cadastro (ela pode trocar)
     LaunchedEffect(Unit) {
         if (!preencherDoPerfil || valorAtual.isNotEmpty()) return@LaunchedEffect
         val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return@LaunchedEffect

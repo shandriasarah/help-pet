@@ -7,7 +7,6 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 
-/** Traduz os erros do Firebase Auth para mensagens claras em portugues. */
 fun mensagemErroAuth(e: Exception?): String = when (e) {
     is FirebaseNetworkException ->
         "Sem conexão com a internet. Verifique sua rede e tente de novo."
@@ -29,7 +28,6 @@ fun mensagemErroAuth(e: Exception?): String = when (e) {
     else -> "Algo deu errado. Tente novamente."
 }
 
-/** Diz exatamente o que falta na senha do cadastro, ou null se ela estiver valida. */
 fun erroSenhaCadastro(senha: String): String? = when {
     senha.isEmpty() -> "Digite uma senha"
     senha.length < 6 -> "A senha precisa ter pelo menos 6 caracteres"

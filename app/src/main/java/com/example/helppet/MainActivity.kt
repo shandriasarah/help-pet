@@ -369,7 +369,6 @@ fun HeaderSection(animais: List<Animal> = emptyList()) {
     val db = remember { FirebaseFirestore.getInstance() }
     var mostrarCompartilhar by remember { mutableStateOf(false) }
 
-    // Avisos que chegaram depois da ultima vez que a pessoa abriu o sino
     var datasNotificacoes by remember { mutableStateOf<List<Long>>(emptyList()) }
     var ultimaVisita by remember { mutableStateOf(RegistroNotificacoes.ultimaVisita(context)) }
     val naoLidas = datasNotificacoes.count { it > ultimaVisita }
@@ -377,7 +376,6 @@ fun HeaderSection(animais: List<Animal> = emptyList()) {
     LaunchedEffect(Unit) {
         val userId = auth.currentUser?.uid
         if (userId != null) {
-            // Mostra logo o nome da conta e depois troca pelo nome do cadastro, se houver
             userName = nomeDoUsuario(null).trim().split(" ").first()
             db.collection("usuarios").document(userId).get()
                 .addOnSuccessListener { document ->
@@ -406,7 +404,6 @@ fun HeaderSection(animais: List<Animal> = emptyList()) {
         onDispose { registro.remove() }
     }
 
-    // Ao voltar para esta tela (ex: depois de abrir o sino), relê a ultima visita para zerar o contador
     val ciclo = LocalLifecycleOwner.current
     DisposableEffect(ciclo) {
         val observador = LifecycleEventObserver { _, evento ->
@@ -458,7 +455,6 @@ fun HeaderSection(animais: List<Animal> = emptyList()) {
     }
 }
 
-/** Botao redondo do cabecalho, com bolinha vermelha de contador opcional. */
 @Composable
 fun BotaoCabecalho(descricao: String, contador: Int = 0, onClick: () -> Unit, icone: @Composable () -> Unit) {
     Box {

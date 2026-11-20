@@ -109,7 +109,6 @@ fun DetalhesPetScreen(
         "Recife, PE"
     }
 
-    // So mostra os dados que foram preenchidos
     val informacoes = listOf(
         "Espécie" to especie,
         "Gênero" to genero,
@@ -148,7 +147,6 @@ fun DetalhesPetScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(
                             onClick = {
-                                // Envia a foto + texto com link do WhatsApp pela janela de compartilhar do Android
                                 escopo.launch {
                                     compartilharPetCompleto(
                                         context,
@@ -199,7 +197,6 @@ fun DetalhesPetScreen(
                 .padding(bottom = paddingValues.calculateBottomPadding())
                 .verticalScroll(rememberScrollState())
         ) {
-            // Foto grande no topo
             Box(modifier = Modifier.fillMaxWidth().height(340.dp)) {
                 if (fotoUrl.isNotEmpty()) {
                     AsyncImage(
@@ -226,7 +223,6 @@ fun DetalhesPetScreen(
                     }
                 }
 
-                // Sombra suave para os botoes aparecerem sobre qualquer foto
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -245,7 +241,6 @@ fun DetalhesPetScreen(
                 }
             }
 
-            // Cartao de informacoes sobreposto a foto
             Column(
                 modifier = Modifier
                     .offset(y = (-28).dp)

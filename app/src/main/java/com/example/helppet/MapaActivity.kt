@@ -80,7 +80,6 @@ fun MapaScreen() {
     val db = remember { FirebaseFirestore.getInstance() }
     var animaisNoBanco by remember { mutableStateOf<List<Animal>>(emptyList()) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
-    // Pets do pin tocado quando ha mais de um na mesma regiao
     var grupoSelecionado by remember { mutableStateOf<List<Animal>?>(null) }
 
 
@@ -174,7 +173,6 @@ fun MapaScreen() {
 
 
 
-                    // So os desaparecidos aparecem no mapa
                     val listaParaExibir = if (animaisNoBanco.isNotEmpty()) {
                         animaisNoBanco.filter { animal -> statusDoAnimal(animal) == StatusPet.PERDIDO }
                     } else {
@@ -189,7 +187,6 @@ fun MapaScreen() {
                         )
                     }
 
-                    // Pets da mesma regiao viram um unico pin (com a quantidade), assim nada fica um sobre o outro
                     listaParaExibir
                         .groupBy { animal -> regiaoDoPet(animal.descricao).first }
                         .forEach { (_, petsDaRegiao) ->
@@ -279,7 +276,6 @@ fun MapaScreen() {
     }
 }
 
-/** Desenha o pin do mapa: circulo colorido com borda branca, patinha branca e ponta embaixo. */
 private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1): BitmapDrawable {
     val d = context.resources.displayMetrics.density
     val largura = (56 * d).toInt()
@@ -292,11 +288,9 @@ private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1):
     val raio = largura / 2f - 3 * d
     val cy = raio + 2 * d
 
-    // Sombra suave
     tinta.color = AndroidColor.argb(50, 0, 0, 0)
     canvas.drawCircle(cx, cy + 2 * d, raio, tinta)
 
-    // Ponta do pin
     val ponta = Path().apply {
         moveTo(cx - raio * 0.55f, cy + raio * 0.6f)
         lineTo(cx, altura - 1 * d)
@@ -306,13 +300,11 @@ private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1):
     tinta.color = cor
     canvas.drawPath(ponta, tinta)
 
-    // Circulo com borda branca
     tinta.color = AndroidColor.WHITE
     canvas.drawCircle(cx, cy, raio, tinta)
     tinta.color = cor
     canvas.drawCircle(cx, cy, raio - 3 * d, tinta)
 
-    // Varios pets na mesma regiao: mostra o numero no lugar da patinha
     if (quantidade > 1) {
         val texto = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = AndroidColor.WHITE
@@ -324,7 +316,6 @@ private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1):
         return BitmapDrawable(context.resources, bitmap)
     }
 
-    // Patinha branca no centro
     ContextCompat.getDrawable(context, R.drawable.ic_nav_pets)?.mutate()?.let { pata ->
         pata.setTint(AndroidColor.WHITE)
         val metade = (raio * 0.8f).toInt()
@@ -336,7 +327,6 @@ private fun criarIconeMarcador(context: Context, cor: Int, quantidade: Int = 1):
 }
 
 
-/** Regiao aproximada do pet pelo bairro citado na descricao: nome da regiao e ponto no mapa. */
 private fun regiaoDoPet(descricao: String): Pair<String, GeoPoint> {
     val texto = descricao.lowercase()
     return when {

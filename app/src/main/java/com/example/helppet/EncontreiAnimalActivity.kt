@@ -316,7 +316,6 @@ fun EncontreiAnimalScreen(onBackClick: () -> Unit) {
                         db.collection("animais").document(petSel.id).update(updates)
                             .addOnSuccessListener {
                                 if (petSel.donoId.isNotEmpty()) {
-                                    // Alerta privado: so o dono do pet ve (inclui o contato de quem encontrou)
                                     NotificacaoHelper.enviarAlerta(
                                         titulo = "Notícia sobre $nomeLimpo!",
                                         mensagem = "O pet $nomeLimpo foi marcado como '$statusResgate' perto de $localizacao! Contato: $telefone",

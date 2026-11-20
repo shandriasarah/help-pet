@@ -57,7 +57,6 @@ object NotificacaoHelper {
     }
 }
 
-/** Guarda no aparelho quando a pessoa abriu o sino pela ultima vez (para contar os avisos novos). */
 object RegistroNotificacoes {
     private fun chave() = "ultima_visita_notificacoes_" + (FirebaseAuth.getInstance().currentUser?.uid ?: "anonimo")
 
@@ -70,7 +69,6 @@ object RegistroNotificacoes {
     }
 }
 
-/** Telefone de quem encontrou: vem no campo proprio ou, nos avisos antigos, no texto ("Contato: 8199..."). */
 fun telefoneDaNotificacao(notificacao: Notificacao): String {
     if (notificacao.telefoneContato.isNotBlank()) return notificacao.telefoneContato.filter { it.isDigit() }
     val achado = Regex("Conta(c)?to:\\s*([0-9 ()-]+)").find(notificacao.mensagem)
@@ -80,7 +78,6 @@ fun telefoneDaNotificacao(notificacao: Notificacao): String {
 class NotificacoesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Lembra a visita anterior (para marcar "Novo") e zera o contador do sino
         val visitaAnterior = RegistroNotificacoes.ultimaVisita(this)
         RegistroNotificacoes.marcarComoVistas(this)
 

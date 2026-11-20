@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Painel que sobe de baixo quando a pessoa toca no botao "+" do menu inferior. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuAdicionarPet(onDismiss: () -> Unit) {

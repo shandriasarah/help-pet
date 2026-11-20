@@ -27,16 +27,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Todos os itens usam exatamente as mesmas medidas, por isso ficam alinhados
 private val ALTURA_FAIXA_ICONE = 40.dp
 private val ESPACO_ICONE_TEXTO = 4.dp
 private val ALTURA_TEXTO = 16.dp
 private val TAMANHO_BOTAO_ADICIONAR = 46.dp
 
-/**
- * Menu inferior do app. Todos os itens ficam centralizados na mesma linha
- * (altura fixa de 72dp) e o menu reserva espaco para a barra de gestos do Android.
- */
 @Composable
 fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
     val primaryGreen = colorResource(id = R.color.primary_green)
@@ -74,7 +69,6 @@ fun MenuInferior(telaAtual: String, onAddClick: () -> Unit = {}) {
                     onClick = { abrir("Animais", AnimaisActivity::class.java) }
                 )
 
-                // Botao "+": sem legenda, circulo centralizado na altura da barra
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -131,7 +125,6 @@ fun BottomNavItem(
     val cor = if (selecionado) primaryGreen else textSecondary
 
     ItemMenuInferior(label = label, cor = cor, negrito = selecionado, modifier = modifier, onClick = onClick) {
-        // Indicador em formato de pilula atras do icone da tela atual
         Box(
             modifier = Modifier
                 .height(32.dp)
@@ -150,7 +143,6 @@ fun BottomNavItem(
     }
 }
 
-/** Estrutura unica de cada item: faixa do icone (40dp) + espaco + faixa do texto (16dp). */
 @Composable
 private fun ItemMenuInferior(
     label: String,

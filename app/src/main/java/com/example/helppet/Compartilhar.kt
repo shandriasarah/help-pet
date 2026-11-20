@@ -36,7 +36,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
-/** Texto do compartilhamento, com link do WhatsApp de quem publicou. */
 fun textoCompartilhamento(animal: Animal): String {
     val status = statusDoAnimal(animal)
     val cabecalho = when (status) {
@@ -70,7 +69,6 @@ fun textoCompartilhamento(animal: Animal): String {
     }
 }
 
-/** Baixa a foto do pet para a pasta temporaria do app, para poder enviar como imagem. */
 private suspend fun baixarFotoParaCompartilhar(context: Context, url: String): Uri? = withContext(Dispatchers.IO) {
     if (url.isBlank()) return@withContext null
     try {
@@ -86,7 +84,6 @@ private suspend fun baixarFotoParaCompartilhar(context: Context, url: String): U
     }
 }
 
-/** Abre a janela padrao de compartilhar do Android com a foto (se tiver) e o texto do pet. */
 suspend fun compartilharPetCompleto(context: Context, animal: Animal) {
     val texto = textoCompartilhamento(animal)
     val foto = baixarFotoParaCompartilhar(context, animal.fotoUrl)
@@ -105,7 +102,6 @@ suspend fun compartilharPetCompleto(context: Context, animal: Animal) {
     context.startActivity(Intent.createChooser(envio, "Compartilhar ${nomeDeExibicao(animal)}"))
 }
 
-/** Painel que sobe de baixo para escolher qual pet compartilhar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompartilharPetSheet(animais: List<Animal>, onDismiss: () -> Unit) {

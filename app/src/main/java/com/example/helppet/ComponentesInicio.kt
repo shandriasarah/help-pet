@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 
-/** Situacao do anuncio, lida do nome (o app guarda o status no nome, ex: "Bob (Perdido)"). */
 enum class StatusPet(val rotulo: String, val aba: String, val atalho: String, val corFundo: Color, val corTexto: Color) {
     PERDIDO("Desaparecido", "Desaparecidos", "Perdidos", Color(0xFFFCE8E6), Color(0xFFC53929)),
     ADOCAO("Para adoção", "Adoção", "Adoção", Color(0xFFFEF7E0), Color(0xFFB06000)),
@@ -51,7 +50,6 @@ fun statusDoAnimal(animal: Animal): StatusPet {
         nome.contains("Para Adoção", ignoreCase = true) -> StatusPet.ADOCAO
         nome.contains("Encontrado", ignoreCase = true) || nome.contains("Está comigo", ignoreCase = true) ||
             nome.contains("Avistei na rua", ignoreCase = true) -> StatusPet.ENCONTRADO
-        // Anuncios sem a etiqueta no nome: usa o texto que cada formulario grava no inicio da descricao
         descricao.startsWith("Visto em:", ignoreCase = true) -> StatusPet.PERDIDO
         descricao.startsWith("Saúde:", ignoreCase = true) -> StatusPet.ADOCAO
         else -> StatusPet.ENCONTRADO
@@ -128,7 +126,6 @@ fun BarraBusca(texto: String, aoMudar: (String) -> Unit, modifier: Modifier = Mo
     )
 }
 
-/** Card compacto para a grade de 2 colunas da tela inicial. */
 @Composable
 fun CardPetGrade(animal: Animal, modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -222,7 +219,6 @@ fun CardPetGrade(animal: Animal, modifier: Modifier = Modifier) {
     }
 }
 
-/** Card cinza "pulsando" enquanto os pets carregam. */
 @Composable
 fun CardEsqueleto(modifier: Modifier = Modifier) {
     val transicao = rememberInfiniteTransition(label = "esqueleto")
@@ -280,10 +276,6 @@ fun EstadoVazio(titulo: String, mensagem: String, textoBotao: String?, onBotao: 
     }
 }
 
-/**
- * Nome para mostrar ao usuario: o do cadastro; se nao houver, o da conta Google/Apple;
- * se nao houver, a parte do e-mail antes do "@".
- */
 fun nomeDoUsuario(nomeCadastro: String?): String {
     val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return "Visitante"
     return nomeCadastro?.takeIf { it.isNotBlank() }
@@ -292,7 +284,6 @@ fun nomeDoUsuario(nomeCadastro: String?): String {
         ?: "Usuário"
 }
 
-/** Cria o documento em "usuarios" para quem ainda nao tem (ex: entrou com Google ou Apple). */
 fun criarPerfilSeFaltar() {
     val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser ?: return
     val ref = com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("usuarios").document(user.uid)

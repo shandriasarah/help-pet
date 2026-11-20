@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Abre a tela de "anuncio publicado" depois que um formulario e salvo com sucesso. */
 fun abrirTelaPublicado(context: Context, status: StatusPet, nomePet: String, avisouDono: Boolean = false) {
     val intent = Intent(context, PublicadoActivity::class.java).apply {
         putExtra("status", status.name)
